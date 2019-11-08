@@ -1,0 +1,4 @@
+/snap/clion/92/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/usr/bin/gcc -G "CodeBlocks - Unix Makefiles" /home/roland/CLionProjects/catastrophic-aes
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/roland/CLionProjects/catastrophic-aes/cmake-build-debug

@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/roland/CLionProjects/catastrophic-aes/main.c
+stdio.h
+-
+stdlib.h
+-
+sodium.h
+-
+src/catastrophic_aes.h
+/home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.h
+
+/home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.h
+stdint.h
+-
+
