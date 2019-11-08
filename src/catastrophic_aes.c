@@ -71,6 +71,25 @@ g_mul(uint8_t a, uint8_t b)
     return p;
 }
 
+static uint32_t
+rijn_rot(uint32_t b)
+{
+    return (b << (uint8_t) 0x08) ^ ((b & (uint32_t) 0xff000000) >> (uint8_t) 0x18);
+}
+
+static uint8_t
+rcon(uint8_t b)
+{
+    uint8_t c = 0x01;
+    if (b == 0)
+        return 0;
+    while (b != 1) {
+        c = g_mul(c, 0x02);
+        b--;
+    }
+    return c;
+}
+
 void
 sub_bytes(uint8_t *buff)
 {
@@ -99,19 +118,21 @@ void
 mix_columns(uint8_t *buff)
 {
     NP_CHECK(buff)
-    uint8_t tmp[16];
     uint8_t a[4];
-
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         a[0] = buff[0 + 4*i]; a[1] = buff[1 + 4*i];
         a[2] = buff[2 + 4*i]; a[3] = buff[3 + 4*i];
 
-        tmp[0 + i*4]  = g_mul(a[0], 0x02) ^ g_mul(a[1], 0x03) ^ a[2] ^ a[3];
-        tmp[1 + i*4]  = a[0] ^ g_mul(a[1], 0x02) ^ g_mul(a[2], 0x03) ^ a[3];
-        tmp[2 + i*4]  = a[0] ^ a[1] ^ g_mul(a[2], 0x02) ^ g_mul(a[3], 0x03);
-        tmp[3 + i*4]  = g_mul(a[0], 0x03) ^ a[1] ^ a[2] ^ g_mul(a[3], 0x02);
+        buff[0 + i*4]  = g_mul(a[0], 0x02) ^ g_mul(a[1], 0x03) ^ a[2] ^ a[3];
+        buff[1 + i*4]  = a[0] ^ g_mul(a[1], 0x02) ^ g_mul(a[2], 0x03) ^ a[3];
+        buff[2 + i*4]  = a[0] ^ a[1] ^ g_mul(a[2], 0x02) ^ g_mul(a[3], 0x03);
+        buff[3 + i*4]  = g_mul(a[0], 0x03) ^ a[1] ^ a[2] ^ g_mul(a[3], 0x02);
     }
+}
 
-    memcpy(buff, tmp, 16* sizeof(uint8_t));
-    NP_CHECK(buff)
+void
+add_round_key(uint8_t *buff)
+{
+    NULL;
 }
