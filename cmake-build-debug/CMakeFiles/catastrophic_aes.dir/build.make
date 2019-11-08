@@ -60,41 +60,41 @@ include CMakeFiles/catastrophic_aes.dir/flags.make
 CMakeFiles/catastrophic_aes.dir/main.c.o: CMakeFiles/catastrophic_aes.dir/flags.make
 CMakeFiles/catastrophic_aes.dir/main.c.o: ../main.c
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/roland/CLionProjects/catastrophic-aes/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/catastrophic_aes.dir/main.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/catastrophic_aes.dir/main.c.o   -c /home/roland/CLionProjects/catastrophic-aes/main.c
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/catastrophic_aes.dir/main.c.o   -c /home/roland/CLionProjects/catastrophic-aes/main.c
 
 CMakeFiles/catastrophic_aes.dir/main.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/catastrophic_aes.dir/main.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/roland/CLionProjects/catastrophic-aes/main.c > CMakeFiles/catastrophic_aes.dir/main.c.i
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/roland/CLionProjects/catastrophic-aes/main.c > CMakeFiles/catastrophic_aes.dir/main.c.i
 
 CMakeFiles/catastrophic_aes.dir/main.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/catastrophic_aes.dir/main.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/roland/CLionProjects/catastrophic-aes/main.c -o CMakeFiles/catastrophic_aes.dir/main.c.s
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/roland/CLionProjects/catastrophic-aes/main.c -o CMakeFiles/catastrophic_aes.dir/main.c.s
 
 CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.o: CMakeFiles/catastrophic_aes.dir/flags.make
 CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.o: ../src/stdprojutils.c
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/roland/CLionProjects/catastrophic-aes/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.o   -c /home/roland/CLionProjects/catastrophic-aes/src/stdprojutils.c
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.o   -c /home/roland/CLionProjects/catastrophic-aes/src/stdprojutils.c
 
 CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/roland/CLionProjects/catastrophic-aes/src/stdprojutils.c > CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.i
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/roland/CLionProjects/catastrophic-aes/src/stdprojutils.c > CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.i
 
 CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/roland/CLionProjects/catastrophic-aes/src/stdprojutils.c -o CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.s
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/roland/CLionProjects/catastrophic-aes/src/stdprojutils.c -o CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.s
 
 CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.o: CMakeFiles/catastrophic_aes.dir/flags.make
 CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.o: ../src/catastrophic_aes.c
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/roland/CLionProjects/catastrophic-aes/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.o"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.o   -c /home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.c
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.o   -c /home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.c
 
 CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.i"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.c > CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.i
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.c > CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.i
 
 CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.s"
-	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.c -o CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.s
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/roland/CLionProjects/catastrophic-aes/src/catastrophic_aes.c -o CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.s
 
 # Object files for target catastrophic_aes
 catastrophic_aes_OBJECTS = \
