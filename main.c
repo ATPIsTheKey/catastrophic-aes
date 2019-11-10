@@ -6,7 +6,6 @@
 
 #include "src/catastrophic_aes.h"
 
-
 int
 main()
 {
