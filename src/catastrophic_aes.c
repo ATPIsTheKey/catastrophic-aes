@@ -54,12 +54,12 @@ enum shiftrow_idx {
 
 
 static uint8_t
-g_mul(uint8_t a, uint8_t b)
+gmul(uint8_t a, uint8_t b)
 {
     uint8_t p = 0x00;
     uint8_t hi_bit_set;
 
-    for (int i = 0; i < 8; i++) {
+    for (int8_t i = 0; i < 8; i++) {
         if (b & (uint8_t) 0x01)
             p ^= a;
         hi_bit_set = a & (uint8_t) 0x80;
@@ -71,29 +71,70 @@ g_mul(uint8_t a, uint8_t b)
     return p;
 }
 
-static uint32_t
-rijn_rot(uint32_t b)
+static void
+rotw(uint8_t *w)
 {
-    return (b << (uint8_t) 0x08) ^ ((b & (uint32_t) 0xff000000) >> (uint8_t) 0x18);
+    uint8_t tmp = w[0];
+    w[0] = w[1]; w[1] = w[2]; w[2] = w[3]; w[3] = tmp;
+}
+
+static void
+subw(uint8_t *w)
+{
+    for (int8_t i = 0; i < 4; i++)
+        w[i] = sbox[w[i]];
 }
 
 static uint8_t
-rcon(uint8_t b)
+rcon(uint8_t i)
 {
     uint8_t c = 0x01;
-    if (b == 0)
+    if (i == 0)
         return 0;
-    while (b != 1) {
-        c = g_mul(c, 0x02);
-        b--;
+    while (i != 1) {
+        c = gmul(c, 0x02);
+        i--;
     }
     return c;
+}
+
+static void
+key_sched_core(uint8_t *w, uint8_t i)
+{
+    rotw(w);
+    subw(w);
+    w[0] ^= rcon(i);
+}
+
+void
+expand_key(const aes_key_s *key, uint8_t *w)
+{
+    uint8_t tmp[4];
+    uint32_t i = 0;
+    uint8_t k = 0;
+
+    for (; i < key->nk; i++) {
+        for (; k < 4; k++)
+            w[i*4 + k] = key->b[i*4 + k];
+        k = 0;
+    }
+
+    for (i = key->nk; i < key->nb * (key->nr + 1); i++) {
+        for (k = 0; k < 4; k++) // copy last word from expanded key buffer
+            tmp[k] = w[i*4 + k - 4];
+        if ( (i % key->nk) == 0 )
+            key_sched_core(tmp, i/key->nk);
+        else if (key->nk > 6 && (i % key->nk) == 4)
+            subw(tmp);
+        for (k = 0; k < 4; k++)
+            w[i*4 + k] = w[4*(i - key->nk) + k] ^ tmp[k];
+    }
 }
 
 void
 sub_bytes(uint8_t *buff)
 {
-    for (int i = 0; i < 16; i++)
+    for (int8_t i = 0; i < 16; i++)
         buff[i] = sbox[buff[i]];
 }
 
@@ -119,20 +160,20 @@ mix_columns(uint8_t *buff)
 {
     NP_CHECK(buff)
     uint8_t a[4];
-    for (int i = 0; i < 4; i++)
+    for (int8_t i = 0; i < 4; i++)
     {
         a[0] = buff[0 + 4*i]; a[1] = buff[1 + 4*i];
         a[2] = buff[2 + 4*i]; a[3] = buff[3 + 4*i];
 
-        buff[0 + i*4]  = g_mul(a[0], 0x02) ^ g_mul(a[1], 0x03) ^ a[2] ^ a[3];
-        buff[1 + i*4]  = a[0] ^ g_mul(a[1], 0x02) ^ g_mul(a[2], 0x03) ^ a[3];
-        buff[2 + i*4]  = a[0] ^ a[1] ^ g_mul(a[2], 0x02) ^ g_mul(a[3], 0x03);
-        buff[3 + i*4]  = g_mul(a[0], 0x03) ^ a[1] ^ a[2] ^ g_mul(a[3], 0x02);
+        buff[0 + i*4]  = gmul(a[0], 0x02) ^ gmul(a[1], 0x03) ^ a[2] ^ a[3];
+        buff[1 + i*4]  = a[0] ^ gmul(a[1], 0x02) ^ gmul(a[2], 0x03) ^ a[3];
+        buff[2 + i*4]  = a[0] ^ a[1] ^ gmul(a[2], 0x02) ^ gmul(a[3], 0x03);
+        buff[3 + i*4]  = gmul(a[0], 0x03) ^ a[1] ^ a[2] ^ gmul(a[3], 0x02);
     }
 }
 
 void
-add_round_key(uint8_t *buff)
+add_round_key(uint8_t *buff) // todo: to be implemented
 {
     NULL;
 }
