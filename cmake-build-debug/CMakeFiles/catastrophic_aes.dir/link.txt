@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/catastrophic_aes.dir/main.c.o CMakeFiles/catastrophic_aes.dir/src/stdprojutils.c.o CMakeFiles/catastrophic_aes.dir/src/catastrophic_aes.c.o  -o catastrophic_aes -Wl,-rpath,/usr/local/lib /usr/local/lib/libsodium.so 
