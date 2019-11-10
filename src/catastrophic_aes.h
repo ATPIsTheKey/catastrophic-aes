@@ -15,10 +15,10 @@ typedef struct aes_key {
 } aes_key_s;
 
 
-void sub_bytes    (uint8_t *buff);
-void shift_rows   (uint8_t *buff);
-void mix_columns  (uint8_t *buff);
-void add_round_key(uint8_t *buff);
+void sub_bytes    (uint8_t *state);
+void shift_rows   (uint8_t *state);
+void mix_columns  (uint8_t *state);
+void add_round_key(uint8_t *state);
 void expand_key   (const aes_key_s *key, uint8_t *w);
 
 #endif //CATASTROPHIC_AES_CATASTROPHIC_AES_H

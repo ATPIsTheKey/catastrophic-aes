@@ -71,6 +71,7 @@ gmul(uint8_t a, uint8_t b)
     return p;
 }
 
+
 static void
 rotw(uint8_t *w)
 {
@@ -78,12 +79,14 @@ rotw(uint8_t *w)
     w[0] = w[1]; w[1] = w[2]; w[2] = w[3]; w[3] = tmp;
 }
 
+
 static void
 subw(uint8_t *w)
 {
     for (int8_t i = 0; i < 4; i++)
         w[i] = sbox[w[i]];
 }
+
 
 static uint8_t
 rcon(uint8_t i)
@@ -98,6 +101,7 @@ rcon(uint8_t i)
     return c;
 }
 
+
 static void
 key_sched_core(uint8_t *w, uint8_t i)
 {
@@ -105,6 +109,7 @@ key_sched_core(uint8_t *w, uint8_t i)
     subw(w);
     w[0] ^= rcon(i);
 }
+
 
 void
 expand_key(const aes_key_s *key, uint8_t *w)
@@ -122,58 +127,62 @@ expand_key(const aes_key_s *key, uint8_t *w)
     for (i = key->nk; i < key->nb * (key->nr + 1); i++) {
         for (k = 0; k < 4; k++) // copy last word from expanded key buffer
             tmp[k] = w[i*4 + k - 4];
-        if ( (i % key->nk) == 0 )
+        if (i % key->nk == 0 )
             key_sched_core(tmp, i/key->nk);
-        else if (key->nk > 6 && (i % key->nk) == 4)
+        else if (key->nk > 6 && i % key->nk == 4)
             subw(tmp);
         for (k = 0; k < 4; k++)
             w[i*4 + k] = w[4*(i - key->nk) + k] ^ tmp[k];
     }
 }
 
+
 void
-sub_bytes(uint8_t *buff)
+sub_bytes(uint8_t *state)
 {
     for (int8_t i = 0; i < 16; i++)
-        buff[i] = sbox[buff[i]];
+        state[i] = sbox[state[i]];
 }
 
+
 void
-shift_rows(uint8_t *buff)
+shift_rows(uint8_t *state)
 {
-    NP_CHECK(buff)
+    NP_CHECK(state)
     uint8_t tmp[16];
-    tmp[0]  = buff[B00]; tmp[1]  = buff[B01];
-    tmp[2]  = buff[B02]; tmp[3]  = buff[B03];
-    tmp[4]  = buff[B10]; tmp[5]  = buff[B11];
-    tmp[6]  = buff[B12]; tmp[7]  = buff[B13];
-    tmp[8]  = buff[B20]; tmp[9]  = buff[B21];
-    tmp[10] = buff[B22]; tmp[11] = buff[B23];
-    tmp[12] = buff[B30]; tmp[13] = buff[B31];
-    tmp[14] = buff[B32]; tmp[15] = buff[B33];
-    memcpy(buff, tmp, 16* sizeof(uint8_t));
-    NP_CHECK(buff)
+    tmp[0]  = state[B00]; tmp[1]  = state[B01];
+    tmp[2]  = state[B02]; tmp[3]  = state[B03];
+    tmp[4]  = state[B10]; tmp[5]  = state[B11];
+    tmp[6]  = state[B12]; tmp[7]  = state[B13];
+    tmp[8]  = state[B20]; tmp[9]  = state[B21];
+    tmp[10] = state[B22]; tmp[11] = state[B23];
+    tmp[12] = state[B30]; tmp[13] = state[B31];
+    tmp[14] = state[B32]; tmp[15] = state[B33];
+    memcpy(state, tmp, 16 * sizeof(uint8_t));
+    NP_CHECK(state)
 }
 
+
 void
-mix_columns(uint8_t *buff)
+mix_columns(uint8_t *state)
 {
-    NP_CHECK(buff)
+    NP_CHECK(state)
     uint8_t a[4];
     for (int8_t i = 0; i < 4; i++)
     {
-        a[0] = buff[0 + 4*i]; a[1] = buff[1 + 4*i];
-        a[2] = buff[2 + 4*i]; a[3] = buff[3 + 4*i];
+        a[0] = state[0 + 4 * i]; a[1] = state[1 + 4 * i];
+        a[2] = state[2 + 4 * i]; a[3] = state[3 + 4 * i];
 
-        buff[0 + i*4]  = gmul(a[0], 0x02) ^ gmul(a[1], 0x03) ^ a[2] ^ a[3];
-        buff[1 + i*4]  = a[0] ^ gmul(a[1], 0x02) ^ gmul(a[2], 0x03) ^ a[3];
-        buff[2 + i*4]  = a[0] ^ a[1] ^ gmul(a[2], 0x02) ^ gmul(a[3], 0x03);
-        buff[3 + i*4]  = gmul(a[0], 0x03) ^ a[1] ^ a[2] ^ gmul(a[3], 0x02);
+        state[0 + i * 4]  = gmul(a[0], 0x02) ^ gmul(a[1], 0x03) ^ a[2] ^ a[3];
+        state[1 + i * 4]  = a[0] ^ gmul(a[1], 0x02) ^ gmul(a[2], 0x03) ^ a[3];
+        state[2 + i * 4]  = a[0] ^ a[1] ^ gmul(a[2], 0x02) ^ gmul(a[3], 0x03);
+        state[3 + i * 4]  = gmul(a[0], 0x03) ^ a[1] ^ a[2] ^ gmul(a[3], 0x02);
     }
 }
 
+
 void
-add_round_key(uint8_t *buff) // todo: to be implemented
+add_round_key(uint8_t *state) // todo: to be implemented
 {
     NULL;
 }
