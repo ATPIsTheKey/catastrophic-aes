@@ -4,7 +4,7 @@
 #include <sodium.h>
 #define SODIUMINIT if (sodium_init() == -1) return 1
 
-#include "src/catastrophic_aes.h"
+#include "catastrophic-aes/aes.h"
 
 int
 main()

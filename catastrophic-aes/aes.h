@@ -2,8 +2,8 @@
 // Created by roland on 2019-11-07.
 //
 
-#ifndef CATASTROPHIC_AES_CATASTROPHIC_AES_H
-#define CATASTROPHIC_AES_CATASTROPHIC_AES_H
+#ifndef CATASTROPHIC_AES_AES_H
+#define CATASTROPHIC_AES_AES_H
 
 #include <stdint.h>
 
@@ -21,4 +21,4 @@ void mix_columns  (uint8_t *state);
 void add_round_key(uint8_t *state);
 void expand_key   (const aes_key_s *key, uint8_t *w);
 
-#endif //CATASTROPHIC_AES_CATASTROPHIC_AES_H
+#endif //CATASTROPHIC_AES_AES_H

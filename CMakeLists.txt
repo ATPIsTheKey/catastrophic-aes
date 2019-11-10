@@ -3,7 +3,7 @@ project(catastrophic_aes C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(catastrophic_aes main.c src/stdprojutils.c src/stdprojutils.h src/catastrophic_aes.c src/catastrophic_aes.h)
+add_executable(catastrophic_aes main.c catastrophic-aes/stdprojutils.c catastrophic-aes/stdprojutils.h catastrophic-aes/aes.c catastrophic-aes/aes.h)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBSODIUM libsodium)

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "catastrophic_aes.h"
+#include "aes.h"
 #include "stdprojutils.h"
 
 
