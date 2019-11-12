@@ -15,7 +15,7 @@
 #define KWHT  "\x1B[37m"
 
 #ifdef DEBUG
-#define DBGPRINT(fmt, args ...) fprintf(stderr, "DEBUG:"" %s:%d:%s(): " fmt, \
+#define DBGPRINT(fmt, args ...) fprintf(stdout, "DEBUG:"" %s:%d:%s(): " fmt, \
     __FILE__, __LINE__, __func__, ##args)
 #else
 #define DBGPRINT(fmt, args...)

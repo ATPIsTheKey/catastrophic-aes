@@ -9,6 +9,12 @@
 #include "aes.h"
 #include "stdprojutils.h"
 
+#define NBYTES_STATE 16
+#define NWORDS_STATE 4
+#define NBYTES_STATECOLUMN 4
+#define NBYTES_EXPKEY128 176
+#define NBYTES_EXPKEY192 208
+#define NBYTES_EXPKEY256 240
 
 static uint8_t sbox[256] =   {
         0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, \
@@ -71,7 +77,6 @@ gmul(uint8_t a, uint8_t b)
     return p;
 }
 
-
 static void
 rotw(uint8_t *w)
 {
@@ -79,14 +84,12 @@ rotw(uint8_t *w)
     w[0] = w[1]; w[1] = w[2]; w[2] = w[3]; w[3] = tmp;
 }
 
-
 static void
 subw(uint8_t *w)
 {
-    for (int8_t i = 0; i < 4; i++)
+    for (int8_t i = 0; i < NBYTES_STATECOLUMN; i++)
         w[i] = sbox[w[i]];
 }
-
 
 static uint8_t
 rcon(uint8_t i)
@@ -101,55 +104,51 @@ rcon(uint8_t i)
     return c;
 }
 
-
 static void
-key_sched_core(uint8_t *w, uint8_t i)
+keysched_core(uint8_t *w, uint8_t i)
 {
     rotw(w);
     subw(w);
     w[0] ^= rcon(i);
 }
 
-
 void
 expand_key(const aes_key_s *key, uint8_t *w)
 {
-    uint8_t tmp[4];
+    uint8_t tmp[NBYTES_STATECOLUMN];
     uint32_t i = 0;
     uint8_t k = 0;
 
     for (; i < key->nk; i++) {
-        for (; k < 4; k++)
-            w[i*4 + k] = key->b[i*4 + k];
+        for (; k < NBYTES_STATECOLUMN; k++)
+            w[i*4 + k] = key->b[i * 4 + k];
         k = 0;
     }
 
     for (i = key->nk; i < key->nb * (key->nr + 1); i++) {
-        for (k = 0; k < 4; k++) // copy last word from expanded key buffer
+        for (k = 0; k < NBYTES_STATECOLUMN; k++)
             tmp[k] = w[i*4 + k - 4];
-        if (i % key->nk == 0 )
-            key_sched_core(tmp, i/key->nk);
+        if (i % key->nk == 0)
+            keysched_core(tmp, i / key->nk);
         else if (key->nk > 6 && i % key->nk == 4)
             subw(tmp);
-        for (k = 0; k < 4; k++)
+        for (k = 0; k < NBYTES_STATECOLUMN; k++)
             w[i*4 + k] = w[4*(i - key->nk) + k] ^ tmp[k];
     }
 }
 
-
 void
 sub_bytes(uint8_t *state)
 {
-    for (int8_t i = 0; i < 16; i++)
+    for (int8_t i = 0; i < NBYTES_STATE; i++)
         state[i] = sbox[state[i]];
 }
-
 
 void
 shift_rows(uint8_t *state)
 {
     NP_CHECK(state)
-    uint8_t tmp[16];
+    uint8_t tmp[NBYTES_STATE];
     tmp[0]  = state[B00]; tmp[1]  = state[B01];
     tmp[2]  = state[B02]; tmp[3]  = state[B03];
     tmp[4]  = state[B10]; tmp[5]  = state[B11];
@@ -158,31 +157,103 @@ shift_rows(uint8_t *state)
     tmp[10] = state[B22]; tmp[11] = state[B23];
     tmp[12] = state[B30]; tmp[13] = state[B31];
     tmp[14] = state[B32]; tmp[15] = state[B33];
-    memcpy(state, tmp, 16 * sizeof(uint8_t));
+    memcpy(state, tmp, NBYTES_STATE * sizeof(uint8_t));
     NP_CHECK(state)
 }
-
 
 void
 mix_columns(uint8_t *state)
 {
-    NP_CHECK(state)
     uint8_t a[4];
-    for (int8_t i = 0; i < 4; i++)
+    for (int8_t i = 0; i < NWORDS_STATE; i++)
     {
-        a[0] = state[0 + 4 * i]; a[1] = state[1 + 4 * i];
-        a[2] = state[2 + 4 * i]; a[3] = state[3 + 4 * i];
+        a[0] = state[i*4 + 0]; a[1] = state[i*4 + 1];
+        a[2] = state[i*4 + 2]; a[3] = state[i*4 + 3];
 
-        state[0 + i * 4]  = gmul(a[0], 0x02) ^ gmul(a[1], 0x03) ^ a[2] ^ a[3];
-        state[1 + i * 4]  = a[0] ^ gmul(a[1], 0x02) ^ gmul(a[2], 0x03) ^ a[3];
-        state[2 + i * 4]  = a[0] ^ a[1] ^ gmul(a[2], 0x02) ^ gmul(a[3], 0x03);
-        state[3 + i * 4]  = gmul(a[0], 0x03) ^ a[1] ^ a[2] ^ gmul(a[3], 0x02);
+        state[i*4 + 0]  = gmul(a[0], 0x02) ^ gmul(a[1], 0x03) ^ a[2] ^ a[3];
+        state[i*4 + 1]  = a[0] ^ gmul(a[1], 0x02) ^ gmul(a[2], 0x03) ^ a[3];
+        state[i*4 + 2]  = a[0] ^ a[1] ^ gmul(a[2], 0x02) ^ gmul(a[3], 0x03);
+        state[i*4 + 3]  = gmul(a[0], 0x03) ^ a[1] ^ a[2] ^ gmul(a[3], 0x02);
     }
 }
 
+void
+add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
+{
+    for (uint8_t i = 0; i < NBYTES_STATE; i++)
+        state[i] ^= w[i + 16 * r_i];
+}
 
 void
-add_round_key(uint8_t *state) // todo: to be implemented
+aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 {
-    NULL;
+    uint8_t r_i = 0;
+    uint8_t state[NBYTES_STATE];
+    memcpy(state, in, NBYTES_STATE * sizeof(uint8_t));
+
+    add_round_key(state, ctx->expkey, r_i);
+
+    for (r_i = 1; r_i <  ctx->key->nr; r_i++) {
+        sub_bytes(state);
+        shift_rows(state);
+        mix_columns(state);
+        add_round_key(state, ctx->expkey, r_i);
+    }
+
+    sub_bytes(state);
+    shift_rows(state);
+    add_round_key(state, ctx->expkey, r_i);
+
+    memcpy(out, state, NBYTES_STATE * sizeof(uint8_t));
+}
+
+aes_ctx_s*
+aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
+{
+    aes_ctx_s *new_ctx = (aes_ctx_s*) malloc(sizeof(aes_ctx_s));
+    aes_key_s *new_key = (aes_key_s*) malloc(sizeof(aes_key_s));
+    NP_CHECK(new_ctx)
+    NP_CHECK(new_key)
+    new_ctx->key = new_key;
+
+    switch (key_bitlen) {
+        case KEY128:
+            new_ctx->key->b  = key;
+            new_ctx->key->nk = 4;
+            new_ctx->key->nb = 4;
+            new_ctx->key->nr = 10;
+            new_ctx->expkey = malloc(NBYTES_EXPKEY128 * sizeof(uint8_t));
+            NP_CHECK(new_ctx->expkey)
+            expand_key(new_ctx->key, new_ctx->expkey);
+            return new_ctx;
+        case KEY192:
+            new_ctx->key->b  = key;
+            new_ctx->key->nk = 6;
+            new_ctx->key->nb = 4;
+            new_ctx->key->nr = 12;
+            new_ctx->expkey = malloc(NBYTES_EXPKEY192 * sizeof(uint8_t));
+            NP_CHECK(new_ctx->expkey)
+            expand_key(new_ctx->key, new_ctx->expkey);
+            return new_ctx;
+        case KEY256:
+            new_ctx->key->b  = key;
+            new_ctx->key->nk = 8;
+            new_ctx->key->nb = 4;
+            new_ctx->key->nr = 14;
+            new_ctx->expkey = malloc(NBYTES_EXPKEY256 * sizeof(uint8_t));
+            NP_CHECK(new_ctx->expkey)
+            expand_key(new_ctx->key, new_ctx->expkey);
+            return new_ctx;
+        default:
+            DBGPRINT(KRED"Unsupported key length %d"KNRM, key_bitlen);
+            exit(EXIT_FAILURE);
+    }
+}
+
+void
+aes_ctx_destroy(aes_ctx_s *ctx)
+{
+    free(ctx->key);
+    free(ctx->expkey);
+    free(ctx);
 }
