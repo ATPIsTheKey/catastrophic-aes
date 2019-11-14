@@ -34,7 +34,12 @@ void shift_rows   (uint8_t *state);
 void mix_columns  (uint8_t *state);
 void add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i);
 
-/* aes encryption operations */
-void aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
+void inv_sub_bytes  (uint8_t *state);
+void inv_shift_rows (uint8_t *state);
+void inv_mix_columns(uint8_t *state);
+
+/* aes encryption/decryption operations */
+void aes_cipher_block  (uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
+void aes_decipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
 
 #endif //CATASTROPHIC_AES_AES_H
