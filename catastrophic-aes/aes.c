@@ -51,6 +51,7 @@ static uint8_t sbox[256] =   {
         0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 };
 
+
 enum shiftrow_idx {
     B00 = 0,  B01 = 5 , B02 = 10, B03 = 15,
     B10 = 4,  B11 = 9 , B12 = 14, B13 = 3 ,
@@ -77,6 +78,7 @@ gmul(uint8_t a, uint8_t b)
     return p;
 }
 
+
 static void
 rotw(uint8_t *w)
 {
@@ -84,12 +86,14 @@ rotw(uint8_t *w)
     w[0] = w[1]; w[1] = w[2]; w[2] = w[3]; w[3] = tmp;
 }
 
+
 static void
 subw(uint8_t *w)
 {
     for (int8_t i = 0; i < NBYTES_STATECOLUMN; i++)
         w[i] = sbox[w[i]];
 }
+
 
 static uint8_t
 rcon(uint8_t i)
@@ -104,6 +108,7 @@ rcon(uint8_t i)
     return c;
 }
 
+
 static void
 keysched_core(uint8_t *w, uint8_t i)
 {
@@ -111,6 +116,7 @@ keysched_core(uint8_t *w, uint8_t i)
     subw(w);
     w[0] ^= rcon(i);
 }
+
 
 void
 expand_key(const aes_key_s *key, uint8_t *w)
@@ -137,12 +143,14 @@ expand_key(const aes_key_s *key, uint8_t *w)
     }
 }
 
+
 void
 sub_bytes(uint8_t *state)
 {
     for (int8_t i = 0; i < NBYTES_STATE; i++)
         state[i] = sbox[state[i]];
 }
+
 
 void
 shift_rows(uint8_t *state)
@@ -161,6 +169,7 @@ shift_rows(uint8_t *state)
     NP_CHECK(state)
 }
 
+
 void
 mix_columns(uint8_t *state)
 {
@@ -177,12 +186,14 @@ mix_columns(uint8_t *state)
     }
 }
 
+
 void
 add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
 {
     for (uint8_t i = 0; i < NBYTES_STATE; i++)
         state[i] ^= w[i + 16 * r_i];
 }
+
 
 void
 aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
@@ -207,15 +218,14 @@ aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
     memcpy(out, state, NBYTES_STATE * sizeof(uint8_t));
 }
 
+
 aes_ctx_s*
 aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
 {
-    aes_ctx_s *new_ctx = (aes_ctx_s*) malloc(sizeof(aes_ctx_s));
-    aes_key_s *new_key = (aes_key_s*) malloc(sizeof(aes_key_s));
-    NP_CHECK(new_ctx)
-    NP_CHECK(new_key)
-    new_ctx->key = new_key;
+    aes_ctx_s *new_ctx = malloc(sizeof(aes_ctx_s)); NP_CHECK(new_ctx)
+    aes_key_s *new_key = malloc(sizeof(aes_key_s)); NP_CHECK(new_key)
 
+    new_ctx->key = new_key;
     switch (key_bitlen) {
         case KEY128:
             new_ctx->key->b  = key;
@@ -224,8 +234,9 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             new_ctx->key->nr = 10;
             new_ctx->expkey = malloc(NBYTES_EXPKEY128 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
+
             expand_key(new_ctx->key, new_ctx->expkey);
-            return new_ctx;
+            break;
         case KEY192:
             new_ctx->key->b  = key;
             new_ctx->key->nk = 6;
@@ -233,8 +244,9 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             new_ctx->key->nr = 12;
             new_ctx->expkey = malloc(NBYTES_EXPKEY192 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
+
             expand_key(new_ctx->key, new_ctx->expkey);
-            return new_ctx;
+            break;
         case KEY256:
             new_ctx->key->b  = key;
             new_ctx->key->nk = 8;
@@ -242,13 +254,23 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             new_ctx->key->nr = 14;
             new_ctx->expkey = malloc(NBYTES_EXPKEY256 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
+
             expand_key(new_ctx->key, new_ctx->expkey);
-            return new_ctx;
+            break;
         default:
-            DBGPRINT(KRED"Unsupported key length %d"KNRM, key_bitlen);
+#ifdef DEBUG
+            DBGPRINT(KRED"Unsupported key length: %d bits. Terminate "
+                         "encryption."KNRM, key_bitlen);
+#endif
             exit(EXIT_FAILURE);
     }
+#ifdef DEBUG
+    DBGPRINT(KYEL"New aes_ctx initialized at %p wit KEY%d\n"KNRM,
+            &new_ctx, key_bitlen);
+#endif
+    return new_ctx;
 }
+
 
 void
 aes_ctx_destroy(aes_ctx_s *ctx)
@@ -256,4 +278,7 @@ aes_ctx_destroy(aes_ctx_s *ctx)
     free(ctx->key);
     free(ctx->expkey);
     free(ctx);
+#ifdef DEBUG
+    DBGPRINT(KYEL"aes_ctx free'd\n"KNRM);
+#endif
 }
