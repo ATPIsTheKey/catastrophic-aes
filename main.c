@@ -23,10 +23,10 @@ main()
     };
 
     uint8_t *encrypted_b = malloc(16 * sizeof(uint8_t));
-
-    aes_ctx_s *ctx = aes_ctx_init(key_b, 9872);
+    aes_ctx_s *ctx = aes_ctx_init(key_b, KEY256);
 
     aes_cipher_block(plain_b, encrypted_b, ctx);
+    aes_decipher_block(encrypted_b, plain_b, ctx);
     for (int i = 0; i < 16; i++)
         printf("%x", encrypted_b[i]);
     printf("\n");

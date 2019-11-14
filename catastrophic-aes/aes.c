@@ -96,6 +96,14 @@ enum shiftrow_idx {
 };
 
 
+//enum inv_shiftrow_idx {
+//    INVB00 = 0,  INVB01 = 5 , INVB02 = 10, INVB03 = 15,
+//    INVB10 = 4,  INVB11 = 9 , INVB12 = 14, INVB13 = 3 ,
+//    INVB20 = 8,  INVB21 = 13, INVB22 = 2 , INVB23 = 7 ,
+//    INVB30 = 12, INVB31 = 1 , INVB32 = 6 , INVB33 = 11
+//};
+
+
 static uint8_t
 gmul(uint8_t a, uint8_t b)
 {
@@ -183,15 +191,22 @@ expand_key(const aes_key_s *key, uint8_t *w)
 void
 sub_bytes(uint8_t *state)
 {
-    for (int8_t i = 0; i < NBYTES_STATE; i++)
+    for (uint8_t i = 0; i < NBYTES_STATE; i++)
         state[i] = sbox[state[i]];
+}
+
+
+void
+inv_sub_bytes(uint8_t *state)
+{
+    for (uint8_t i = 0; i < NBYTES_STATE; i++)
+        state[i] = invsbox[state[i]];
 }
 
 
 void
 shift_rows(uint8_t *state)
 {
-    NP_CHECK(state)
     uint8_t tmp[NBYTES_STATE];
     tmp[0]  = state[B00]; tmp[1]  = state[B01];
     tmp[2]  = state[B02]; tmp[3]  = state[B03];
@@ -201,6 +216,23 @@ shift_rows(uint8_t *state)
     tmp[10] = state[B22]; tmp[11] = state[B23];
     tmp[12] = state[B30]; tmp[13] = state[B31];
     tmp[14] = state[B32]; tmp[15] = state[B33];
+    memcpy(state, tmp, NBYTES_STATE * sizeof(uint8_t));
+    NP_CHECK(state)
+}
+
+
+void
+inv_shift_rows(uint8_t *state)
+{
+    uint8_t tmp[NBYTES_STATE];
+    tmp[B00] = state[0] ; tmp[B01] = state[1] ;
+    tmp[B02] = state[2] ; tmp[B03] = state[3] ;
+    tmp[B10] = state[4] ; tmp[B11] = state[5] ;
+    tmp[B12] = state[6] ; tmp[B13] = state[7] ;
+    tmp[B20] = state[8] ; tmp[B21] = state[9] ;
+    tmp[B22] = state[10]; tmp[B23] = state[11];
+    tmp[B30] = state[12]; tmp[B31] = state[13];
+    tmp[B32] = state[14]; tmp[B33] = state[15];
     memcpy(state, tmp, NBYTES_STATE * sizeof(uint8_t));
     NP_CHECK(state)
 }
@@ -224,6 +256,27 @@ mix_columns(uint8_t *state)
 
 
 void
+inv_mix_columns(uint8_t *state)
+{
+    uint8_t a[4];
+    for (int8_t i = 0; i < NWORDS_STATE; i++)
+    {
+        a[0] = state[i*4 + 0]; a[1] = state[i*4 + 1];
+        a[2] = state[i*4 + 2]; a[3] = state[i*4 + 3];
+
+        state[i*4 + 0]  = gmul(a[0], 0x0e) ^ gmul(a[1], 0x0b) ^ \
+                          gmul(a[2], 0x0d) ^ gmul(a[3], 0x09);
+        state[i*4 + 1]  = gmul(a[0], 0x09) ^ gmul(a[1], 0x0e) ^ \
+                          gmul(a[2], 0x0b) ^ gmul(a[3], 0x0d);
+        state[i*4 + 2]  = gmul(a[0], 0x0d) ^ gmul(a[1], 0x09) ^ \
+                          gmul(a[2], 0x0e) ^ gmul(a[3], 0x0b);
+        state[i*4 + 3]  = gmul(a[0], 0x0b) ^ gmul(a[1], 0x0d) ^ \
+                          gmul(a[2], 0x09) ^ gmul(a[3], 0x0e);
+    }
+}
+
+
+void
 add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
 {
     for (uint8_t i = 0; i < NBYTES_STATE; i++)
@@ -240,7 +293,7 @@ aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
     add_round_key(state, ctx->expkey, r_i);
 
-    for (r_i = 1; r_i <  ctx->key->nr; r_i++) {
+    for (r_i = 1; r_i < ctx->key->nr; r_i++) {
         sub_bytes(state);
         shift_rows(state);
         mix_columns(state);
@@ -249,6 +302,30 @@ aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
     sub_bytes(state);
     shift_rows(state);
+    add_round_key(state, ctx->expkey, r_i);
+
+    memcpy(out, state, NBYTES_STATE * sizeof(uint8_t));
+}
+
+
+void
+aes_decipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
+{
+    uint8_t r_i = ctx->key->nr - 1;
+    uint8_t state[NBYTES_STATE];
+    memcpy(state, in, NBYTES_STATE * sizeof(uint8_t));
+
+    add_round_key(state, ctx->expkey, r_i);
+
+    for (r_i--; r_i != 1; r_i--) {
+        inv_shift_rows(state);
+        inv_sub_bytes(state);
+        add_round_key(state, ctx->expkey, r_i);
+        inv_mix_columns(state);
+    }
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
     add_round_key(state, ctx->expkey, r_i);
 
     memcpy(out, state, NBYTES_STATE * sizeof(uint8_t));
