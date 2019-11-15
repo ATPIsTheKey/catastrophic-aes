@@ -4,9 +4,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "aes_utils.h"
-#include "stdprojutils.h"
+#include "../utils/stdprojutils.h"
 
 
 pw_input_s*
@@ -14,7 +15,8 @@ input_pw(FILE *fp, size_t buff_init_size)
 {
     size_t buffsize = buff_init_size;
     pw_input_s *input = malloc(sizeof(struct pw_input)); NP_CHECK(input)
-    input->buff       = malloc(sizeof(char) * buffsize); NP_CHECK(input->buff)
+    input->buff = calloc(buffsize, sizeof(char));
+    NP_CHECK(input->buff)
 
     int c;
     size_t len = 0;
@@ -48,4 +50,16 @@ pw_input_destroy(pw_input_s *input)
 {
     free(input->buff);
     free(input);
+}
+
+// Based on https://stackoverflow.com/questions/3408706/hexadecimal-string-to-byte-array-in-c
+int hexstr_to_bin(char *hexstr, uint8_t *dest_buffer) {
+    char *line = hexstr, *data = line;
+    int offset, read_byte, data_len = 0;
+
+    while (sscanf(data, " %02x%n", &read_byte, &offset) == 1) {
+        dest_buffer[data_len++] = read_byte;
+        data += offset;
+    }
+    return data_len;
 }

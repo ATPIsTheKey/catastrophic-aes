@@ -6,14 +6,19 @@
 #define CATASTROPHIC_AES_AES_UTILS_H
 
 #include <stddef.h>
+#include <stdint.h>
 
-typedef struct pw_input {
+typedef struct __pw_input {
     char *buff;
     size_t len;
 } pw_input_s;
 
-pw_input_s *input_pw (FILE *fp, size_t buff_init_size);
+/* dynamic length input function */
+pw_input_s *input_pw(FILE *fp, size_t buff_init_size);
+
 void pw_input_destroy(pw_input_s *input);
 
+/* convert hex string to hex buffer */
+int hexstr_to_bin(char *hexstr, uint8_t *out);
 
 #endif //CATASTROPHIC_AES// _UTILS_H

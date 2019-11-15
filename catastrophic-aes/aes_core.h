@@ -2,8 +2,8 @@
 // Created by roland on 2019-11-07.
 //
 
-#ifndef CATASTROPHIC_AES_AES_H
-#define CATASTROPHIC_AES_AES_H
+#ifndef CATASTROPHIC_AES_AES_CORE_H
+#define CATASTROPHIC_AES_AES_CORE_H
 
 #include <stdint.h>
 
@@ -11,20 +11,22 @@
 #define KEY192 192
 #define KEY256 256
 
-typedef struct aes_key {
+/* data structures */
+typedef struct __aes_key {
     uint8_t *b;
     uint8_t  nk;
     uint8_t  nb;
     uint8_t  nr;
 } aes_key_s;
 
-typedef struct aes_ctx {
+typedef struct __aes_ctx {
     aes_key_s *key;
     uint8_t   *expkey;
 } aes_ctx_s;
 
-/* data structures */
+/* initialize data structures */
 aes_ctx_s *aes_ctx_init(uint8_t *key, uint16_t key_bitlen);
+
 void aes_ctx_destroy(aes_ctx_s *ctx);
 
 /* aes core operations */
@@ -38,8 +40,9 @@ void inv_sub_bytes  (uint8_t *state);
 void inv_shift_rows (uint8_t *state);
 void inv_mix_columns(uint8_t *state);
 
-/* aes encryption/decryption operations */
+/* aes block cipher operations */
 void aes_cipher_block   (uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
 void aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
 
-#endif //CATASTROPHIC_AES_AES_H
+
+#endif //CATASTROPHIC_AES_AES_CORE_H

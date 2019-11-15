@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "aes.h"
-#include "stdprojutils.h"
+#include "aes_core.h"
+#include "../utils/stdprojutils.h"
 
 #define NBYTES_STATE 16
 #define NWORDS_STATE 4
@@ -15,7 +15,6 @@
 #define NBYTES_EXPKEY128 176
 #define NBYTES_EXPKEY192 208
 #define NBYTES_EXPKEY256 240
-
 
 
 static uint8_t sbox[256] =   {
@@ -369,7 +368,7 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             DBGPRINT(KRED"Unsupported key length: %d bits. Terminate "
                          "encryption."KNRM, key_bitlen);
 #endif
-            exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE); // todo: error signaling instead of exiting
     }
     return new_ctx;
 }
@@ -382,38 +381,3 @@ aes_ctx_destroy(aes_ctx_s *ctx)
     free(ctx->expkey);
     free(ctx);
 }
-
-
-static pw_input_s*
-input_pw(FILE *fp, size_t buff_init_size)
-{
-    size_t buffsize = buff_init_size;
-    pw_input_s *input = malloc(sizeof(struct pw_input)); NP_CHECK(input)
-    input->buff       = malloc(sizeof(char) * buffsize); NP_CHECK(input->buff)
-
-    int c;
-    size_t len = 0;
-    while( EOF != (c=fgetc(fp)) && c != '\n' )
-    {
-        input->buff[len++] = (char) c;
-        if(len == buff_init_size) {
-            input->buff = realloc(
-                    input->buff, sizeof(char) * (buffsize += 16)
-            );
-            NP_CHECK(input->buff)
-        }
-    }
-    printf("\n");
-
-    input->buff[++len] ='\0';
-    input->buff        = realloc(input->buff, len);
-    input->len         = len;
-
-    if (input->len == 1) {
-        free (input->buff);
-        free (input);
-        return NULL;
-    }
-    return input;
-}
-

@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.15)
 project(catastrophic_aes C)
 
 set(CMAKE_C_STANDARD 99)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
-
-add_executable(${PROJECT_NAME} main.c catastrophic-aes/stdprojutils.c catastrophic-aes/stdprojutils.h catastrophic-aes/aes.c catastrophic-aes/aes.h catastrophic-aes/aes_utils.c catastrophic-aes/aes_utils.h)
 
 find_package(OpenSSL REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBSODIUM libsodium)
+find_package(Threads REQUIRED)
 
 if(STATIC_LIBSODIUM)
     if(BUILD_STATIC_EXECUTABLES)
@@ -26,6 +24,8 @@ if(STATIC_LIBSODIUM)
     set(LIBSODIUM_LDFLAGS_OTHER ${LIBSODIUM_STATIC_LDFLAGS_OTHER})
 endif()
 
+add_executable(${PROJECT_NAME} main.c utils/stdprojutils.c utils/stdprojutils.h catastrophic-aes/aes_core.c catastrophic-aes/aes_core.h catastrophic-aes/aes_utils.c catastrophic-aes/aes_utils.h catastrophic-aes/aes_fcrypt.c catastrophic-aes/aes_fcrypt.h)
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${SODIUM_INCLUDE_DIR})
 target_compile_options(${PROJECT_NAME} PUBLIC ${LIBSODIUM_CFLAGS} ${LIBSODIUM_CFLAGS_OTHER} PRIVATE -DDEBUG)
-target_link_libraries(${PROJECT_NAME} ${SODIUM_LIBRARY} ${LIBSODIUM_LDFLAGS_OTHER} OpenSSL::Crypto)
+target_link_libraries(${PROJECT_NAME} ${SODIUM_LIBRARY} ${LIBSODIUM_LDFLAGS_OTHER} ssl crypto ${CMAKE_THREAD_LIBS_INIT})
