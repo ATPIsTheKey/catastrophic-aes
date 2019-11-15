@@ -16,6 +16,8 @@
 #define NBYTES_EXPKEY192 208
 #define NBYTES_EXPKEY256 240
 
+
+
 static uint8_t sbox[256] =   {
         0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5,
         0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -94,14 +96,6 @@ enum shiftrow_idx {
     B20 = 8,  B21 = 13, B22 = 2 , B23 = 7 ,
     B30 = 12, B31 = 1 , B32 = 6 , B33 = 11
 };
-
-
-//enum inv_shiftrow_idx {
-//    INVB00 = 0,  INVB01 = 5 , INVB02 = 10, INVB03 = 15,
-//    INVB10 = 4,  INVB11 = 9 , INVB12 = 14, INVB13 = 3 ,
-//    INVB20 = 8,  INVB21 = 13, INVB22 = 2 , INVB23 = 7 ,
-//    INVB30 = 12, INVB31 = 1 , INVB32 = 6 , INVB33 = 11
-//};
 
 
 static uint8_t
@@ -309,15 +303,15 @@ aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
 
 void
-aes_decipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
+aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 {
-    uint8_t r_i = ctx->key->nr - 1;
+    uint8_t r_i = ctx->key->nr;
     uint8_t state[NBYTES_STATE];
-    memcpy(state, in, NBYTES_STATE * sizeof(uint8_t));
+    memcpy(state, in, NBYTES_STATE * sizeof(uint8_t)); NP_CHECK(state)
 
     add_round_key(state, ctx->expkey, r_i);
 
-    for (r_i--; r_i != 1; r_i--) {
+    for (r_i-- ; r_i >= 1; r_i--) {
         inv_shift_rows(state);
         inv_sub_bytes(state);
         add_round_key(state, ctx->expkey, r_i);
@@ -326,7 +320,7 @@ aes_decipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
     inv_shift_rows(state);
     inv_sub_bytes(state);
-    add_round_key(state, ctx->expkey, r_i);
+    add_round_key(state, ctx->expkey, 0);
 
     memcpy(out, state, NBYTES_STATE * sizeof(uint8_t));
 }
@@ -377,10 +371,6 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
 #endif
             exit(EXIT_FAILURE);
     }
-#ifdef DEBUG
-    DBGPRINT(KYEL"New aes_ctx initialized at %p wit KEY%d\n"KNRM,
-            &new_ctx, key_bitlen);
-#endif
     return new_ctx;
 }
 
@@ -391,7 +381,39 @@ aes_ctx_destroy(aes_ctx_s *ctx)
     free(ctx->key);
     free(ctx->expkey);
     free(ctx);
-#ifdef DEBUG
-    DBGPRINT(KYEL"aes_ctx free'd\n"KNRM);
-#endif
 }
+
+
+static pw_input_s*
+input_pw(FILE *fp, size_t buff_init_size)
+{
+    size_t buffsize = buff_init_size;
+    pw_input_s *input = malloc(sizeof(struct pw_input)); NP_CHECK(input)
+    input->buff       = malloc(sizeof(char) * buffsize); NP_CHECK(input->buff)
+
+    int c;
+    size_t len = 0;
+    while( EOF != (c=fgetc(fp)) && c != '\n' )
+    {
+        input->buff[len++] = (char) c;
+        if(len == buff_init_size) {
+            input->buff = realloc(
+                    input->buff, sizeof(char) * (buffsize += 16)
+            );
+            NP_CHECK(input->buff)
+        }
+    }
+    printf("\n");
+
+    input->buff[++len] ='\0';
+    input->buff        = realloc(input->buff, len);
+    input->len         = len;
+
+    if (input->len == 1) {
+        free (input->buff);
+        free (input);
+        return NULL;
+    }
+    return input;
+}
+

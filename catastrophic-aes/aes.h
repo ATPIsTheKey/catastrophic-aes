@@ -23,7 +23,7 @@ typedef struct aes_ctx {
     uint8_t   *expkey;
 } aes_ctx_s;
 
-/* initializers */
+/* data structures */
 aes_ctx_s *aes_ctx_init(uint8_t *key, uint16_t key_bitlen);
 void aes_ctx_destroy(aes_ctx_s *ctx);
 
@@ -39,7 +39,7 @@ void inv_shift_rows (uint8_t *state);
 void inv_mix_columns(uint8_t *state);
 
 /* aes encryption/decryption operations */
-void aes_cipher_block  (uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
-void aes_decipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
+void aes_cipher_block   (uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
+void aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
 
 #endif //CATASTROPHIC_AES_AES_H
