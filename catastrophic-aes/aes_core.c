@@ -232,8 +232,8 @@ expand_key(const aes_key_s *key, uint8_t *w)
         if (i % key->Nk == 0)
             keysched_core(tmp, i / key->Nk);
 
-            // If Nk = 8 and i is a multiple of Nk, then subw operation is
-            // applied to w[i - 1] prior to the XOR.
+        // If Nk = 8 and i is a multiple of Nk, then subw operation is
+        // applied to w[i - 1] prior to the XOR.
         else if (key->Nk > 6 && i % key->Nk == 4)
             subw(tmp);
 
