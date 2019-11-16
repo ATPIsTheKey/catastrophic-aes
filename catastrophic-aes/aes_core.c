@@ -2,6 +2,11 @@
 // Created by roland on 2019-11-07.
 //
 
+/*
+ * This is a terrible implementation of the Advanced Encryption Standard (AES)
+ * according to the Federal Information Processing Standards Publication 197.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -97,6 +102,21 @@ enum shiftrow_idx {
 };
 
 
+////////////////////////
+/// Private functions //
+////////////////////////
+
+
+/*
+ * The function gmul multiplies polynomials modulo the
+ * irreducible polynomial m(x) = x^8 + x^4 + x^3 + x + 1.
+ * I only know how to multiply in galois fields on paper.
+ * I have implemented gmul algorithm according to fips-197,
+ * though, I am not fully understanding the math behind it.
+ * I will definitely have to spend more time to understand
+ * this algorithm deeply.
+ */
+
 static uint8_t
 gmul(uint8_t a, uint8_t b)
 {
@@ -116,6 +136,11 @@ gmul(uint8_t a, uint8_t b)
 }
 
 
+/*
+ * The function rotw takes a word [a0, a1, a2, a3] as input, performs a cyclic
+ * permutation, and returns the word [a1, a2, a3, a0].
+ */
+
 static void
 rotw(uint8_t *w)
 {
@@ -124,6 +149,10 @@ rotw(uint8_t *w)
 }
 
 
+/*
+ * The function subw substitutes sub-bytes of a word with values of the sbox
+ */
+
 static void
 subw(uint8_t *w)
 {
@@ -131,6 +160,11 @@ subw(uint8_t *w)
         w[i] = sbox[w[i]];
 }
 
+
+/*
+ * The function rcon computes the round constant c which is {02} exponentiated to
+ * exponent i in Rijndael's Galois field.
+ */
 
 static uint8_t
 rcon(uint8_t i)
@@ -146,6 +180,12 @@ rcon(uint8_t i)
 }
 
 
+/*
+ * The function keysched_core performs the functions rotw and subw on a input word,
+ * as well as XORS the first sub-byte of the word with a round constant computed
+ * with rcon from i
+ */
+
 static void
 keysched_core(uint8_t *w, uint8_t i)
 {
@@ -155,31 +195,60 @@ keysched_core(uint8_t *w, uint8_t i)
 }
 
 
+///////////////////////
+/// Public functions //
+///////////////////////
+
+
+/*
+ * The function expand_key implements the Rindael key schedule to derive
+ * Nb(Nr+1) round keys from a single key of length 128 bits, 192 bits or 256 bits.
+ * The round keys are used in each round to encrypt/decrypt the states.
+ */
+
 void
 expand_key(const aes_key_s *key, uint8_t *w)
 {
-    uint8_t tmp[NBYTES_STATECOLUMN];
+    uint8_t tmp[NBYTES_STATECOLUMN]; // used for column and row operations
     uint32_t i = 0;
     uint8_t k = 0;
 
-    for (; i < key->nk; i++) {
+    // The first round key is the key itself.
+    for (; i < key->Nk; i++) {
         for (; k < NBYTES_STATECOLUMN; k++)
-            w[i*4 + k] = key->b[i * 4 + k];
+            w[i * 4 + k] = key->b[i * 4 + k];
         k = 0;
     }
 
-    for (i = key->nk; i < key->nb * (key->nr + 1); i++) {
+    // All other round keys are found from the previous round keys.
+    for (i = key->Nk; i < key->Nb * (key->Nr + 1); i++) {
+        // copy w[i - 1]
         for (k = 0; k < NBYTES_STATECOLUMN; k++)
-            tmp[k] = w[i*4 + k - 4];
-        if (i % key->nk == 0)
-            keysched_core(tmp, i / key->nk);
-        else if (key->nk > 6 && i % key->nk == 4)
+            tmp[k] = w[i * 4 + k - 4];
+
+        // For words in positions that are a multiple of Nk, keysched_core
+        // transformation is applied to w[i - 1] prior to the XOR, followed by
+        // an XOR with a round constant, Rcon[i]
+        if (i % key->Nk == 0)
+            keysched_core(tmp, i / key->Nk);
+
+            // If Nk = 8 and i is a multiple of Nk, then subw operation is
+            // applied to w[i - 1] prior to the XOR.
+        else if (key->Nk > 6 && i % key->Nk == 4)
             subw(tmp);
+
+        // Every following word, w[i], is equal to the XOR of the
+        // previous word, w[i - 1]
         for (k = 0; k < NBYTES_STATECOLUMN; k++)
-            w[i*4 + k] = w[4*(i - key->nk) + k] ^ tmp[k];
+            w[i * 4 + k] = w[4 * (i - key->Nk) + k] ^ tmp[k];
     }
 }
 
+
+/*
+ * The function sub_bytes substitutes the values in the state matrix with values of
+ * the sbox.
+ */
 
 void
 sub_bytes(uint8_t *state)
@@ -189,6 +258,11 @@ sub_bytes(uint8_t *state)
 }
 
 
+/*
+ * The function sub_bytes substitutes the values in the state matrix with values of
+ * the inverse sbox.
+ */
+
 void
 inv_sub_bytes(uint8_t *state)
 {
@@ -196,6 +270,13 @@ inv_sub_bytes(uint8_t *state)
         state[i] = invsbox[state[i]];
 }
 
+
+/*
+ * The function shift_rows shifts rows of state to the left.
+ * Shifting offset is different per row where shifting offset = Row number.
+ * This implementation shifts rows by swapping bytes of state according to
+ * pre-defined shiftrow indexes in shiftrow_idx enum
+ */
 
 void
 shift_rows(uint8_t *state)
@@ -214,6 +295,11 @@ shift_rows(uint8_t *state)
 }
 
 
+/*
+ * The function inv_shift_rows reverses shift_rows operation.
+ * The function is identical to shift_rows with only indexes being swapped.
+ */
+
 void
 inv_shift_rows(uint8_t *state)
 {
@@ -231,43 +317,80 @@ inv_shift_rows(uint8_t *state)
 }
 
 
+/*
+ * The function mix_columns performs a matrix multiplication on the state.
+ * Each column is treated as a four-term polynomial over GF(2^8) which is then
+ * multiplied with a fixed polynomial a(x):
+ *
+ *      r0 = {2} • a0 + {3} • a1 + {1} • a2 + {1} • a3
+ *      r1 = {1} • a0 + {2} • a1 + {3} • a2 + {1} • a3
+ *      r2 = {1} • a0 + {1} • a1 + {2} • a2 + {3} • a3
+ *      r3 = {3} • a0 + {1} • a1 + {1} • a2 + {2} • a3
+ *
+ */
+
 void
 mix_columns(uint8_t *state)
 {
     uint8_t a[4];
-    for (int8_t i = 0; i < NWORDS_STATE; i++)
-    {
-        a[0] = state[i*4 + 0]; a[1] = state[i*4 + 1];
-        a[2] = state[i*4 + 2]; a[3] = state[i*4 + 3];
+    for (int8_t i = 0; i < NWORDS_STATE; i++) {
+        a[0] = state[i * 4 + 0];
+        a[1] = state[i * 4 + 1];
+        a[2] = state[i * 4 + 2];
+        a[3] = state[i * 4 + 3];
 
-        state[i*4 + 0]  = gmul(a[0], 0x02) ^ gmul(a[1], 0x03) ^ a[2] ^ a[3];
-        state[i*4 + 1]  = a[0] ^ gmul(a[1], 0x02) ^ gmul(a[2], 0x03) ^ a[3];
-        state[i*4 + 2]  = a[0] ^ a[1] ^ gmul(a[2], 0x02) ^ gmul(a[3], 0x03);
-        state[i*4 + 3]  = gmul(a[0], 0x03) ^ a[1] ^ a[2] ^ gmul(a[3], 0x02);
+        state[i * 4 + 0] = gmul(a[0], 0x02) ^ gmul(a[1], 0x03) ^ a[2] ^ a[3];
+        state[i * 4 + 1] = a[0] ^ gmul(a[1], 0x02) ^ gmul(a[2], 0x03) ^ a[3];
+        state[i * 4 + 2] = a[0] ^ a[1] ^ gmul(a[2], 0x02) ^ gmul(a[3], 0x03);
+        state[i * 4 + 3] = gmul(a[0], 0x03) ^ a[1] ^ a[2] ^ gmul(a[3], 0x02);
     }
 }
 
+
+/*
+ * The function inv_mix_columns performs a matrix multiplication on the state such
+ * that mix_columns operation on state is reversed.
+ * Each column is treated as a four-term polynomial over GF(2^8) which is then
+ * multiplied with a fixed polynomial a(x):
+ *
+ *      r0 = {0e} • a0 + {0b} • a1 + {0d} • a2 + {09} • a3
+ *      r1 = {09} • a0 + {0e} • a1 + {0b} • a2 + {0d} • a3
+ *      r2 = {0d} • a0 + {09} • a1 + {0e} • a2 + {0b} • a3
+ *      r3 = {0b} • a0 + {0d} • a1 + {09} • a2 + {0e} • a3
+ *
+ */
 
 void
 inv_mix_columns(uint8_t *state)
 {
     uint8_t a[4];
-    for (int8_t i = 0; i < NWORDS_STATE; i++)
-    {
-        a[0] = state[i*4 + 0]; a[1] = state[i*4 + 1];
-        a[2] = state[i*4 + 2]; a[3] = state[i*4 + 3];
+    for (int8_t i = 0; i < NWORDS_STATE; i++) {
+        a[0] = state[i * 4 + 0];
+        a[1] = state[i * 4 + 1];
+        a[2] = state[i * 4 + 2];
+        a[3] = state[i * 4 + 3];
 
-        state[i*4 + 0]  = gmul(a[0], 0x0e) ^ gmul(a[1], 0x0b) ^ \
+        state[i * 4 + 0] = gmul(a[0], 0x0e) ^ gmul(a[1], 0x0b) ^ \
                           gmul(a[2], 0x0d) ^ gmul(a[3], 0x09);
-        state[i*4 + 1]  = gmul(a[0], 0x09) ^ gmul(a[1], 0x0e) ^ \
+        state[i * 4 + 1] = gmul(a[0], 0x09) ^ gmul(a[1], 0x0e) ^ \
                           gmul(a[2], 0x0b) ^ gmul(a[3], 0x0d);
-        state[i*4 + 2]  = gmul(a[0], 0x0d) ^ gmul(a[1], 0x09) ^ \
+        state[i * 4 + 2] = gmul(a[0], 0x0d) ^ gmul(a[1], 0x09) ^ \
                           gmul(a[2], 0x0e) ^ gmul(a[3], 0x0b);
-        state[i*4 + 3]  = gmul(a[0], 0x0b) ^ gmul(a[1], 0x0d) ^ \
+        state[i * 4 + 3] = gmul(a[0], 0x0b) ^ gmul(a[1], 0x0d) ^ \
                           gmul(a[2], 0x09) ^ gmul(a[3], 0x0e);
     }
 }
 
+
+/*
+ * The function add_round_key adds the current round key to the state buffer by a
+ * XOR operation.
+ * A pointer to the expanded key buffer is passed to add_round_key along with the
+ * current round index r_i, allowing add_round_key to XOR the state with the correct
+ * round key.
+ * The inverse of the add_round_key operation is add_round_key as the inverse of
+ * XOR is itself.
+ */
 
 void
 add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
@@ -277,22 +400,31 @@ add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
 }
 
 
+/*
+ * The function aes_cipher_block AES ciphers an plain text 16 byte block
+ * from an AES key
+ */
+
 void
 aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 {
-    uint8_t r_i = 0;
+    uint8_t r_i = 0; // round index
     uint8_t state[NBYTES_STATE];
     memcpy(state, in, NBYTES_STATE * sizeof(uint8_t));
 
+    // Add first round key to the state before starting rounds.
     add_round_key(state, ctx->expkey, r_i);
 
-    for (r_i = 1; r_i < ctx->key->nr; r_i++) {
+    // There are a total of Nr rounds per block ciphering.
+    // The first Nr - 1 rounds are identical.
+    for (r_i = 1; r_i < ctx->key->Nr; r_i++) {
         sub_bytes(state);
         shift_rows(state);
         mix_columns(state);
         add_round_key(state, ctx->expkey, r_i);
     }
 
+    // Last round without mix_columns operation.
     sub_bytes(state);
     shift_rows(state);
     add_round_key(state, ctx->expkey, r_i);
@@ -301,15 +433,24 @@ aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 }
 
 
+/*
+ * The function aes_invcipher_block deciphers an AES encrypted 16 byte block
+ * from a correct AES key.
+ */
+
 void
 aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 {
-    uint8_t r_i = ctx->key->nr;
+    // Start round index from Nr so that it can be decremented in rounds loop.
+    uint8_t r_i = ctx->key->Nr;
     uint8_t state[NBYTES_STATE];
     memcpy(state, in, NBYTES_STATE * sizeof(uint8_t)); NP_CHECK(state)
 
+    // Add  first round key to the state before starting  rounds.
     add_round_key(state, ctx->expkey, r_i);
 
+    // There are a total of Nr rounds per block deciphering.
+    // The first Nr - 1 rounds are identical.
     for (r_i-- ; r_i >= 1; r_i--) {
         inv_shift_rows(state);
         inv_sub_bytes(state);
@@ -317,6 +458,7 @@ aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
         inv_mix_columns(state);
     }
 
+    // Last round without mix_columns operation.
     inv_shift_rows(state);
     inv_sub_bytes(state);
     add_round_key(state, ctx->expkey, 0);
@@ -324,6 +466,24 @@ aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
     memcpy(out, state, NBYTES_STATE * sizeof(uint8_t));
 }
 
+
+/*
+ * The function aes_ctx_init initializes a new context for AES block ciphering.
+ * AES key is initialized in aes_key_s data structure and its key is expanded into
+ * large enough buffer. AES key and expanded key buffer are stored in aes_ctx_s
+ * data structure.
+ *
+ * aes_key_s data structure is initialized according to key length:
+ *
+ *            | Key Length | Block Size | Number of Rounds
+ *            | (Nk words) | (Nb words) | (Nr)
+ *            --------------------------------------------
+ *    AES-128 | 4          | 4         | 10
+ *            --------------------------------------------
+ *    AES-192 | 6          | 4         | 12
+ *            --------------------------------------------
+ *    AES-256 | 8          | 4         | 14
+ */
 
 aes_ctx_s*
 aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
@@ -335,9 +495,9 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
     switch (key_bitlen) {
         case KEY128:
             new_ctx->key->b  = key;
-            new_ctx->key->nk = 4;
-            new_ctx->key->nb = 4;
-            new_ctx->key->nr = 10;
+            new_ctx->key->Nk = 4;
+            new_ctx->key->Nb = 4;
+            new_ctx->key->Nr = 10;
             new_ctx->expkey = malloc(NBYTES_EXPKEY128 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
 
@@ -345,9 +505,9 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             break;
         case KEY192:
             new_ctx->key->b  = key;
-            new_ctx->key->nk = 6;
-            new_ctx->key->nb = 4;
-            new_ctx->key->nr = 12;
+            new_ctx->key->Nk = 6;
+            new_ctx->key->Nb = 4;
+            new_ctx->key->Nr = 12;
             new_ctx->expkey = malloc(NBYTES_EXPKEY192 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
 
@@ -355,9 +515,9 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             break;
         case KEY256:
             new_ctx->key->b  = key;
-            new_ctx->key->nk = 8;
-            new_ctx->key->nb = 4;
-            new_ctx->key->nr = 14;
+            new_ctx->key->Nk = 8;
+            new_ctx->key->Nb = 4;
+            new_ctx->key->Nr = 14;
             new_ctx->expkey = malloc(NBYTES_EXPKEY256 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
 
@@ -368,11 +528,16 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             DBGPRINT(KRED"Unsupported key length: %d bits. Terminate "
                          "encryption."KNRM, key_bitlen);
 #endif
-            exit(EXIT_FAILURE); // todo: error signaling instead of exiting
+            return NULL;
     }
     return new_ctx;
 }
 
+
+/*
+ * The function aes_ctx_destroy frees any dynamic memory allocated while initializing
+ * new AES context with aes_ctx_init
+ */
 
 void
 aes_ctx_destroy(aes_ctx_s *ctx)

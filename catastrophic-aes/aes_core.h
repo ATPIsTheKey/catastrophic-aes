@@ -14,9 +14,9 @@
 /* data structures */
 typedef struct __aes_key {
     uint8_t *b;
-    uint8_t  nk;
-    uint8_t  nb;
-    uint8_t  nr;
+    uint8_t Nk;
+    uint8_t Nb;
+    uint8_t Nr;
 } aes_key_s;
 
 typedef struct __aes_ctx {

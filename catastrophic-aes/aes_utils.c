@@ -14,7 +14,8 @@ pw_input_s*
 input_pw(FILE *fp, size_t buff_init_size)
 {
     size_t buffsize = buff_init_size;
-    pw_input_s *input = malloc(sizeof(struct pw_input)); NP_CHECK(input)
+    pw_input_s *input = malloc(sizeof(pw_input_s));
+    NP_CHECK(input)
     input->buff = calloc(buffsize, sizeof(char));
     NP_CHECK(input->buff)
 
