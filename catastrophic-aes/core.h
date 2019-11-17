@@ -2,8 +2,8 @@
 // Created by roland on 2019-11-07.
 //
 
-#ifndef CATASTROPHIC_AES_AES_CORE_H
-#define CATASTROPHIC_AES_AES_CORE_H
+#ifndef CATASTROPHIC_AES_CORE_H
+#define CATASTROPHIC_AES_CORE_H
 
 #include <stdint.h>
 
@@ -45,4 +45,4 @@ void aes_cipher_block   (uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
 void aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx);
 
 
-#endif //CATASTROPHIC_AES_AES_CORE_H
+#endif //CATASTROPHIC_AES_CORE_H

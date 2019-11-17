@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "aes_core.h"
+#include "core.h"
 #include "../utils/stdprojutils.h"
 
 #define NBYTES_STATE 16

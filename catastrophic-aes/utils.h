@@ -2,8 +2,8 @@
 // Created by roland on 2019-11-15.
 //
 
-#ifndef CATASTROPHIC_AES_AES_UTILS_H
-#define CATASTROPHIC_AES_AES_UTILS_H
+#ifndef CATASTROPHIC_AES_UTILS_H
+#define CATASTROPHIC_AES_UTILS_H
 
 #include <stddef.h>
 #include <stdint.h>

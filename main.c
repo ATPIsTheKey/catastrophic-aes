@@ -5,7 +5,7 @@
 #include <sodium.h>
 #define SODIUMINIT if (sodium_init() == -1) return 1
 
-#include "catastrophic-aes/aes_fcrypt.h"
+#include "catastrophic-aes/fcrypt.h"
 #include "utils/stdprojutils.h"
 
 #define PATH "/home/roland/CLionProjects/catastrophic-aes/tests/files"
@@ -28,17 +28,17 @@ main() // todo: Extremely provisional tests. Implement better tests in near futu
 
     aes_ctx_s *ctx = aes_ctx_init(key_b, KEY128);
     FILE *fp_plain = fopen(PATH"/test_file.jpg", "rb");
-    FILE *fp_encrypted = fopen(PATH"/shapes_of_molecules.crypt", "wb");
+    FILE *fp_encrypted = fopen(PATH"/test_file.crypt", "wb");
     NP_CHECK(fp_plain)
     NP_CHECK(fp_encrypted)
 
-    aes_file_encrypt(fp_plain, fp_encrypted, CBC, ctx);
+    aes_file_encrypt(fp_plain, fp_encrypted, CTR, ctx);
 
     fclose(fp_plain);
     fclose(fp_encrypted);
 
-    fp_encrypted = fopen(PATH"/shapes_of_molecules.crypt", "rb");
-    FILE *fp_decrypted = fopen(PATH"/shapes_of_molecules2.jpg", "wb");
+    fp_encrypted = fopen(PATH"/test_file.crypt", "rb");
+    FILE *fp_decrypted = fopen(PATH"/test_file2.jpg", "wb");
     NP_CHECK(fp_encrypted)
     NP_CHECK(fp_decrypted)
 
