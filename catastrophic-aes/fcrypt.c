@@ -14,12 +14,26 @@
 #define NBYTES_STATE 16
 
 
+/*
+ * The function xor_buff XORs two buffers of identical length b_len.
+ */
+
 static void
 xor_buff(uint8_t *a, const uint8_t *b, size_t b_len) {
     for (size_t i = 0; i < b_len; i++)
         a[i] ^= b[i];
 }
 
+
+/*
+ * The function aes_ECB_encrypt_file makes an encrypted copy of the file in
+ * Electronic Codebook (ECB) mode.
+ * The file is divided into 16 byte blocks, and each block is encrypted
+ * separately.
+ * There is a significant lack of diffusion in the final encrypted file, hence
+ * this mode lacks serious message confidentiality, and it is not recommended
+ * for use in cryptographic protocols at all.
+ */
 
 static int
 aes_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx) {
@@ -41,9 +55,16 @@ aes_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx) {
         aes_cipher_block(plain_b, enc_b, ctx);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
+
     return 1;
 }
 
+
+/*
+ * The function aes_ECB_decrypt_file makes an decrypted copy of the ECB
+ * encrypted file. The file is divided into 16 byte blocks, and each block is
+ * decrypted separately.
+ */
 
 static int
 aes_ECB_decrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx) {
@@ -57,6 +78,18 @@ aes_ECB_decrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx) {
     return 1;
 }
 
+
+/*
+ * The function aes_CBC_encrypt_file makes an encrypted copy of the file in
+ * Cipher Block Chaining (CBC) mode.
+ * The file is encrypted by sequentially encrypting 16 byte blocks of
+ * plaintext where the plaintext is XORed with the previous ciphertext block before
+ * being encrypted.
+ * To make each message unique, a random 16 byte initialization vector is used
+ * for the first plaintext block.
+ * This initialization vector is stored in the beginning of the file at an
+ * offset of 5 bytes.
+ */
 
 static int
 aes_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
@@ -87,6 +120,15 @@ aes_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 }
 
 
+/*
+ * The function aes_CBC_decrypt_file makes a decrypted copy of the CBC
+ * encrypted file.
+ * Each 16 byte ciphertext block of the encrypted file is XORed with the
+ * ciphertext of the previous block.
+ * To decrypt the first byte block the initialization vector is required
+ * which is pointed to by *init_vector.
+ */
+
 static int
 aes_CBC_decrypt_file(
         FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx, uint8_t *init_vector)
@@ -104,6 +146,19 @@ aes_CBC_decrypt_file(
     return 1;
 }
 
+
+/*
+ * The function aes_CTR_encrypt makes an encrypted copy of the file in
+ * Counter mode (CTR).
+ * CTR mode turns the aes block cipher to a stream cipher in that it
+ * generates the next keystream block by encrypting successive values of a
+ * "counter".
+ * In this implementation the counter is a 64 bit integer that is incremented
+ * per ciphered 16 byte plain message block of the file.
+ * A random 64 bit (8 byte) nonce value is concatenated with the counter to
+ * produce the actual unique counter block for encryption.
+ * todo: finish
+ */
 
 static int
 aes_CTR_encrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
