@@ -110,13 +110,13 @@ aes_CTR_encrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 {
     uint8_t plain_b[16], enc_b[16];
     // nonce_ctr buffer holds nonce bytes and counter
-    uint64_t *nonce_ctr = calloc(2, sizeof(uint64_t));
+    uint64_t nonce_ctr[2] = { 0x00, 0x00 };
     size_t b_read = 0;
 
     aes_fheader_s fheader = {.cipher_opmode = {'C', 'T', 'R', '\0', '\0'}};
-    if (RAND_bytes( (uint8_t*) nonce_ctr, 8) != 1) return 0;
+    if (RAND_bytes( (uint8_t*) &nonce_ctr[0], 8) != 1) return 0;
     // in CTR mode init vector is used to store 8 byte nonce value
-    memcpy(fheader.init_vector, nonce_ctr, sizeof(nonce_ctr[0]));
+    memcpy(fheader.init_vector, (uint8_t*) nonce_ctr, sizeof(nonce_ctr[0]));
 
     fwrite(&fheader, sizeof(aes_fheader_s), sizeof(uint8_t), fp_out);
     while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16) {
@@ -134,24 +134,22 @@ aes_CTR_encrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
 
-    printf("%lu", nonce_ctr[1]);
-
     return 1;
 }
 
 
 static int
 aes_CTR_decrypt_file(
-        FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx, uint8_t *init_vector)
+        FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx, uint8_t *init_vector)
 {
     uint8_t enc_b[16], plain_b[16];
-    uint64_t *nonce_ctr = calloc(2, sizeof(uint64_t));
+    uint64_t nonce_ctr[2] = { 0x00, 0x00 };
 
     // copy 8 bytes nonce value of init vector into first 8 bytes of nonce_ctr buffer
-    memcpy(nonce_ctr, init_vector, 2 * sizeof(uint64_t));
+    memcpy((uint8_t*) nonce_ctr, init_vector, 2 * sizeof(uint64_t));
 
     while (fread(enc_b, 1, sizeof(enc_b), fp_in)) {
-        aes_invcipher_block( (uint8_t*) nonce_ctr, plain_b, ctx);
+        aes_cipher_block( (uint8_t*) nonce_ctr, plain_b, ctx);
         xor_buff(plain_b, enc_b, NBYTES_STATE);
         fwrite(plain_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
         nonce_ctr[1]++;

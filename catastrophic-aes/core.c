@@ -500,7 +500,6 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             new_ctx->key->Nr = 10;
             new_ctx->expkey = malloc(NBYTES_EXPKEY128 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
-
             expand_key(new_ctx->key, new_ctx->expkey);
             break;
         case KEY192:
@@ -510,7 +509,6 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             new_ctx->key->Nr = 12;
             new_ctx->expkey = malloc(NBYTES_EXPKEY192 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
-
             expand_key(new_ctx->key, new_ctx->expkey);
             break;
         case KEY256:
@@ -520,7 +518,6 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
             new_ctx->key->Nr = 14;
             new_ctx->expkey = malloc(NBYTES_EXPKEY256 * sizeof(uint8_t));
             NP_CHECK(new_ctx->expkey)
-
             expand_key(new_ctx->key, new_ctx->expkey);
             break;
         default:
