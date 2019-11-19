@@ -24,8 +24,15 @@ if(STATIC_LIBSODIUM)
     set(LIBSODIUM_LDFLAGS_OTHER ${LIBSODIUM_STATIC_LDFLAGS_OTHER})
 endif()
 
-add_executable(${PROJECT_NAME} main.c utils/stdprojutils.c utils/stdprojutils.h catastrophic-aes/core.c catastrophic-aes/core.h catastrophic-aes/utils.c catastrophic-aes/utils.h catastrophic-aes/fcrypt.c catastrophic-aes/fcrypt.h)
+add_executable(${PROJECT_NAME} main.c
+        utils/stdprojutils.c utils/stdprojutils.h
+        catastrophic-aes/core.c catastrophic-aes/core.h
+        catastrophic-aes/utils.c catastrophic-aes/utils.h
+        catastrophic-aes/fcrypt.c catastrophic-aes/fcrypt.h
+        tests/src/aes_quicktest.h
+        libs/argtable3.c libs/argtable3.h
+        )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${SODIUM_INCLUDE_DIR})
 target_compile_options(${PROJECT_NAME} PUBLIC ${LIBSODIUM_CFLAGS} ${LIBSODIUM_CFLAGS_OTHER} PRIVATE -DDEBUG)
-target_link_libraries(${PROJECT_NAME} ${SODIUM_LIBRARY} ${LIBSODIUM_LDFLAGS_OTHER} ssl crypto ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${PROJECT_NAME} ${SODIUM_LIBRARY} ${LIBSODIUM_LDFLAGS_OTHER} ssl crypto ${CMAKE_THREAD_LIBS_INIT} m)

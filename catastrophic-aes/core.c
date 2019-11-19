@@ -3,8 +3,8 @@
 //
 
 /*
- * This is a terrible implementation of the Advanced Encryption Standard (AES)
- * according to the Federal Information Processing Standards Publication 197.
+ * Implementation of the Advanced Encryption Standard (AES) after specifications of
+ * Federal Information Processing Standards Publication 197.
  */
 
 #include <stdio.h>
@@ -123,7 +123,7 @@ gmul(uint8_t a, uint8_t b)
     uint8_t p = 0x00;
     uint8_t hi_bit_set;
 
-    for (int8_t i = 0; i < 8; i++) {
+    for (uint8_t i = 0; i < 8; i++) {
         if (b & (uint8_t) 0x01)
             p ^= a;
         hi_bit_set = a & (uint8_t) 0x80;
@@ -156,7 +156,7 @@ rotw(uint8_t *w)
 static void
 subw(uint8_t *w)
 {
-    for (int8_t i = 0; i < NBYTES_STATECOLUMN; i++)
+    for (uint8_t i = 0; i < NBYTES_STATECOLUMN; i++)
         w[i] = sbox[w[i]];
 }
 
@@ -207,7 +207,7 @@ keysched_core(uint8_t *w, uint8_t i)
  */
 
 void
-expand_key(const aes_key_s *key, uint8_t *w)
+expand_key(aes_key_s *key, uint8_t *w)
 {
     uint8_t tmp[NBYTES_STATECOLUMN]; // used for column and row operations
     uint32_t i = 0;
@@ -333,7 +333,7 @@ void
 mix_columns(uint8_t *state)
 {
     uint8_t a[4];
-    for (int8_t i = 0; i < NWORDS_STATE; i++) {
+    for (uint8_t i = 0; i < NWORDS_STATE; i++) {
         a[0] = state[i * 4 + 0];
         a[1] = state[i * 4 + 1];
         a[2] = state[i * 4 + 2];
@@ -364,7 +364,7 @@ void
 inv_mix_columns(uint8_t *state)
 {
     uint8_t a[4];
-    for (int8_t i = 0; i < NWORDS_STATE; i++) {
+    for (uint8_t i = 0; i < NWORDS_STATE; i++) {
         a[0] = state[i * 4 + 0];
         a[1] = state[i * 4 + 1];
         a[2] = state[i * 4 + 2];
@@ -401,12 +401,12 @@ add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
 
 
 /*
- * The function aes_cipher_block AES ciphers an plain text 16 byte block
+ * The function AES_cipher_block AES ciphers an plain text 16 byte block
  * from an AES key
  */
 
 void
-aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
+AES_cipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 {
     uint8_t r_i = 0; // round index
     uint8_t state[NBYTES_STATE];
@@ -434,12 +434,12 @@ aes_cipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
 
 /*
- * The function aes_invcipher_block deciphers an AES encrypted 16 byte block
+ * The function AES_invcipher_block deciphers an AES encrypted 16 byte block
  * from a correct AES key.
  */
 
 void
-aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
+AES_invcipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 {
     // Start round index from Nr so that it can be decremented in rounds loop.
     uint8_t r_i = ctx->key->Nr;
@@ -468,7 +468,7 @@ aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
 
 /*
- * The function aes_ctx_init initializes a new context for AES block ciphering.
+ * The function AES_ctx_init initializes a new context for AES block ciphering.
  * AES key is initialized in aes_key_s data structure and its key is expanded into
  * large enough buffer. AES key and expanded key buffer are stored in aes_ctx_s
  * data structure.
@@ -486,7 +486,7 @@ aes_invcipher_block(uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
  */
 
 aes_ctx_s*
-aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
+AES_ctx_init(uint8_t *key, uint16_t key_bitlen)
 {
     aes_ctx_s *new_ctx = malloc(sizeof(aes_ctx_s)); NP_CHECK(new_ctx)
     aes_key_s *new_key = malloc(sizeof(aes_key_s)); NP_CHECK(new_key)
@@ -532,12 +532,12 @@ aes_ctx_init(uint8_t *key, uint16_t key_bitlen)
 
 
 /*
- * The function aes_ctx_destroy frees any dynamic memory allocated while initializing
- * new AES context with aes_ctx_init
+ * The function AES_ctx_destroy frees any dynamic memory allocated while initializing
+ * new AES context with AES_ctx_init
  */
 
 void
-aes_ctx_destroy(aes_ctx_s *ctx)
+AES_ctx_destroy(aes_ctx_s *ctx)
 {
     free(ctx->key);
     free(ctx->expkey);

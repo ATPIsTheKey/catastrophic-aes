@@ -15,7 +15,6 @@ typedef struct __pw_input {
 
 /* dynamic length input function */
 pw_input_s *input_pw(FILE *fp, size_t buff_init_size);
-
 void pw_input_destroy(pw_input_s *input);
 
 /* convert hex string to hex buffer */

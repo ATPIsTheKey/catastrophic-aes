@@ -1,51 +1,81 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
-#include <sodium.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
-#include "catastrophic-aes/fcrypt.h"
-#include "utils/stdprojutils.h"
+#include "libs/argtable3.h"
+#include "tests/src/aes_quicktest.h"
+#include "catastrophic-aes/utils.h"
 
-#define PATH "/home/roland/CLionProjects/catastrophic-aes/tests/files"
 
+/* global arg_xxx structs */
+struct arg_lit *verb, *help, *version, *opmode;
+struct arg_int *klen;
+struct arg_file *o, *file;
+struct arg_end *end;
 
 int
-main() // todo: Extremely provisional tests. Implement better tests in near future.
+main(int argc, char **argv)
 {
-    uint8_t plain_b[16] = {
-            0x57, 0x68, 0x61, 0x74, 0x65, 0x76, 0x65, 0x72,
-            0x2e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    /*** Initialize arg parser *****************************************************/
+
+    /* the global arg_xxx structs are initialised within the argtable */
+    void *argtable[] = {
+            verb    = arg_litn("v", "verbose", 0, 1, "verbose output"),
+            help    = arg_litn(NULL, "help", 0, 1, "display this help and exit"),
+            version = arg_litn(NULL, "version", 0, 1, "display version info and exit"),
+            o       = arg_filen("o", NULL, "myfile", 1, 1, "output file"),
+            file    = arg_filen(NULL, NULL, "<file>", 1, 1, "input files"),
+            klen    = arg_intn("k", "klen", "<n>", 0, 1, "AES key length of either 128, 192 or 256; default is 128"),
+            opmode  = arg_litn("c", "mode", 0, 1, "set block cipher mode of operation; default is CBC"),
+            end     = arg_end(20),
     };
 
-    uint8_t key_b[16] = {
-            0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-            0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
-    };
+    int exitcode = 0;
+    char progname[] = "catastrophicaes";
 
-    uint8_t encrypted_b[16];
+    int nerrors;
+    nerrors = arg_parse(argc,argv,argtable);
 
-    aes_ctx_s *ctx = aes_ctx_init(key_b, KEY128);
-    FILE *fp_plain = fopen(PATH"/test_file.jpg", "rb");
-    FILE *fp_encrypted = fopen(PATH"/test_file.crypt", "wb");
-    NP_CHECK(fp_plain)
-    NP_CHECK(fp_encrypted)
+    /* special case: '--help' takes precedence over error reporting */
+    if (help->count > 0)
+    {
+        printf("Usage: %s", progname);
+        arg_print_syntax(stdout, argtable, "\n");
+        printf("Demonstrate command-line parsing in argtable3.\n\n");
+        arg_print_glossary(stdout, argtable, "  %-25s %s\n");
+        exitcode = 0;
+        goto exit;
+    }
 
-    AES_file_encrypt(fp_plain, fp_encrypted, CBC, ctx);
+    /* If the parser returned any errors then display them and exit */
+    if (nerrors > 0)
+    {
+        /* Display the error details contained in the arg_end struct.*/
+        arg_print_errors(stdout, end, progname);
+        printf("Try '%s --help' for more information.\n", progname);
+        exitcode = 1;
+        goto exit;
+    }
 
-    fclose(fp_plain);
-    fclose(fp_encrypted);
+    /*** begin encryption procedure ************************************************/
 
-    fp_encrypted = fopen(PATH"/test_file.crypt", "rb");
-    FILE *fp_decrypted = fopen(PATH"/test_file2.jpg", "wb");
-    NP_CHECK(fp_encrypted)
-    NP_CHECK(fp_decrypted)
+    char full_path_in[PATH_MAX];
+    char full_path_out[PATH_MAX];
+    sprintf(full_path_in, "%s", file->filename[0]);
+    sprintf(full_path_out, "%s.crypt", o->filename[0]);
 
-    AES_file_decrypt(fp_encrypted, fp_decrypted, ctx);
+    FILE *fp_in   = fopen(full_path_in, "rb");
+    FILE *fp_out  = fopen(full_path_out, "wb+");
+//    FILE *key_out = fopen("")
 
-    fclose(fp_encrypted);
-    fclose(fp_decrypted);
+    pw_input_s *pw = input_pw(stdin, 32);
 
-    aes_ctx_destroy(ctx);
-    return EXIT_SUCCESS;
+    exit:
+    /* deallocate each non-null entry in argtable[] */
+    arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
+    return exitcode;
 }

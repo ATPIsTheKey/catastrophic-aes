@@ -14,6 +14,7 @@ pw_input_s*
 input_pw(FILE *fp, size_t buff_init_size)
 {
     size_t buffsize = buff_init_size;
+
     pw_input_s *input = malloc(sizeof(pw_input_s));
     NP_CHECK(input)
     input->buff = calloc(buffsize, sizeof(char));
@@ -31,7 +32,6 @@ input_pw(FILE *fp, size_t buff_init_size)
             NP_CHECK(input->buff)
         }
     }
-    printf("\n");
 
     input->buff[++len] ='\0';
     input->buff        = realloc(input->buff, len);
@@ -42,6 +42,7 @@ input_pw(FILE *fp, size_t buff_init_size)
         free(input);
         return NULL;
     }
+
     return input;
 }
 
@@ -55,7 +56,7 @@ pw_input_destroy(pw_input_s *input)
 
 // Based on https://stackoverflow.com/questions/3408706/hexadecimal-string-to-byte-array-in-c
 int hexstr_to_bin(char *hexstr, uint8_t *dest_buffer) {
-    char *line = hexstr, *data = line;
+    char *ln = hexstr, *data = ln;
     int offset, read_byte, data_len = 0;
 
     while (sscanf(data, " %02x%n", &read_byte, &offset) == 1) {

@@ -23,7 +23,7 @@ typedef struct __attribute__((__packed__)) __aes_fheader {
 } aes_fheader_s;
 
 
-int AES_file_encrypt(FILE *fp_in, FILE *fp_out, int opmode_hash, aes_ctx_s *ctx);
-int AES_file_decrypt(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx);
+int AES_file_encrypt(FILE *fp_in, FILE *fp_out, uint16_t opmode_magic, const aes_ctx_s *ctx);
+int AES_file_decrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx);
 
 #endif //CATASTROPHIC_AES_FCRYPT_H

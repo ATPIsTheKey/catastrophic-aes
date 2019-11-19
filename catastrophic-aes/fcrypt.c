@@ -3,7 +3,6 @@
 //
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <openssl/rand.h>
@@ -47,7 +46,7 @@ AES_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 
     fwrite(&fheader, sizeof(aes_fheader_s), sizeof(uint8_t), fp_out);
     while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16) {
-        aes_cipher_block(plain_b, enc_b, ctx);
+        AES_cipher_block(plain_b, enc_b, ctx);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
 
@@ -57,7 +56,7 @@ AES_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
         for (size_t i = b_read; i < 16; i++)
             plain_b[i] = '\0';
         // repeat encryption procedure for last plaintext block
-        aes_cipher_block(plain_b, enc_b, ctx);
+        AES_cipher_block(plain_b, enc_b, ctx);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
 
@@ -77,7 +76,7 @@ AES_ECB_decrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
     uint8_t enc_b[16], plain_b[16];
 
     while (fread(enc_b, 1, sizeof(enc_b), fp_in)) {
-        aes_invcipher_block(enc_b, plain_b, ctx);
+        AES_invcipher_block(enc_b, plain_b, ctx);
         fwrite(plain_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
 
@@ -115,7 +114,7 @@ AES_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
         // The plaintext buffer is XORed with the previous encrypted bytes
         // buffer.
         xor_buff(plain_b, enc_b, NBYTES_STATE);
-        aes_cipher_block(plain_b, enc_b, ctx);
+        AES_cipher_block(plain_b, enc_b, ctx);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
 
@@ -126,7 +125,7 @@ AES_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
             plain_b[b_read] = '\0';
         // repeat encryption procedure for last plaintext block
         xor_buff(plain_b, enc_b, NBYTES_STATE);
-        aes_cipher_block(plain_b, enc_b, ctx);
+        AES_cipher_block(plain_b, enc_b, ctx);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
 
@@ -139,21 +138,21 @@ AES_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
  * encrypted file.
  * Each 16 byte ciphertext block of the encrypted file is XORed with the
  * ciphertext of the previous block.
- * To decrypt the first byte block the initialization vector is required
+ * To decrypt the first byte block the initialization vector is required,
  * which is pointed to by *init_vector.
  */
 
 static int
 aes_CBC_decrypt_file(
-        FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx, uint8_t *init_vector)
+        FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx, const uint8_t *init_vector)
 {
     uint8_t enc_b[16], plain_b[16], enc_b_prev[16];
     // for convenience, copy the initialization vector into enc_b_prev buffer
-    // for first
+    // for first ciphertext XORing
     memcpy(enc_b_prev, init_vector, NBYTES_STATE * sizeof(uint8_t));
 
     while (fread(enc_b, 1, sizeof(enc_b), fp_in)) {
-        aes_invcipher_block(enc_b, plain_b, ctx);
+        AES_invcipher_block(enc_b, plain_b, ctx);
         xor_buff(plain_b, enc_b_prev, NBYTES_STATE);
         fwrite(plain_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
         memcpy(enc_b_prev, enc_b, NBYTES_STATE);
@@ -166,7 +165,7 @@ aes_CBC_decrypt_file(
 /*
  * The function AES_CTR_encrypt makes a encrypted copy of the file in
  * Counter mode (CTR).
- * CTR mode turns the aes block cipher to a stream cipher in that it
+ * CTR mode turns the AES block cipher to a stream cipher in that it
  * generates the next keystream block by encrypting successive values of a
  * "counter".
  * In this implementation the counter is a 64 bit integer that is incremented
@@ -185,21 +184,24 @@ AES_CTR_encrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 
     aes_fheader_s fheader = { .opmode_magic = CTR };
     if (RAND_bytes( (uint8_t*) &nonce_ctr[0], 8) != 1) return 0;
-    // in CTR mode init vector is used to store 8 byte nonce value
+    // In CTR mode init vector is used to store 8 byte nonce value
     memcpy(fheader.init_vector, (uint8_t*) nonce_ctr, sizeof(nonce_ctr[0]));
 
     fwrite(&fheader, sizeof(aes_fheader_s), sizeof(uint8_t), fp_out);
     while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16) {
-        aes_cipher_block( (uint8_t*) nonce_ctr, enc_b, ctx);
+        AES_cipher_block((uint8_t *) nonce_ctr, enc_b, ctx);
         xor_buff(enc_b, plain_b, NBYTES_STATE);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
         nonce_ctr[1]++; // increment counter
     }
 
-    if (b_read) { // add padding
+    // If the last plaintext block is not a multiple of 16 bytes, pad it with
+    // null bytes
+    if (b_read) {
         for (; b_read < 16; b_read++)
             plain_b[b_read] = '\0';
-        aes_cipher_block( (uint8_t*) nonce_ctr, enc_b, ctx);
+        // repeat encryption procedure for last plaintext block
+        AES_cipher_block((uint8_t *) nonce_ctr, enc_b, ctx);
         xor_buff(enc_b, plain_b, NBYTES_STATE);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
@@ -219,7 +221,7 @@ AES_CTR_encrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 
 static int
 AES_CTR_decrypt_file(
-        FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx, uint8_t *init_vector)
+        FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx, const uint8_t *init_vector)
 {
     uint8_t enc_b[16], plain_b[16];
     uint64_t nonce_ctr[2] = { 0x00, 0x00 };
@@ -228,7 +230,7 @@ AES_CTR_decrypt_file(
     memcpy((uint8_t*) nonce_ctr, init_vector, 2 * sizeof(uint64_t));
 
     while (fread(enc_b, 1, sizeof(enc_b), fp_in)) {
-        aes_cipher_block( (uint8_t*) nonce_ctr, plain_b, ctx);
+        AES_cipher_block((uint8_t *) nonce_ctr, plain_b, ctx);
         xor_buff(plain_b, enc_b, NBYTES_STATE);
         fwrite(plain_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
         nonce_ctr[1]++;
@@ -237,10 +239,12 @@ AES_CTR_decrypt_file(
     return 1;
 }
 
+
 int
-AES_file_encrypt(FILE *fp_in, FILE *fp_out, int opmode_hash, aes_ctx_s *ctx)
+AES_file_encrypt(
+        FILE *fp_in, FILE *fp_out, uint16_t opmode_magic, const aes_ctx_s *ctx)
 {
-    switch (opmode_hash) {
+    switch (opmode_magic) {
         case ECB:
             AES_ECB_encrypt_file(fp_in, fp_out, ctx);
             break;
@@ -262,7 +266,7 @@ AES_file_encrypt(FILE *fp_in, FILE *fp_out, int opmode_hash, aes_ctx_s *ctx)
 
 
 int
-AES_file_decrypt(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx)
+AES_file_decrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 {
     uint16_t opmode_magic;
     fread(&opmode_magic, sizeof(opmode_magic), 1, fp_in);
@@ -288,4 +292,3 @@ AES_file_decrypt(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx)
     }
     return 1;
 }
-
