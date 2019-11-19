@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include <sodium.h>
-#define SODIUMINIT if (sodium_init() == -1) return 1
 
 #include "catastrophic-aes/fcrypt.h"
 #include "utils/stdprojutils.h"
@@ -32,7 +31,7 @@ main() // todo: Extremely provisional tests. Implement better tests in near futu
     NP_CHECK(fp_plain)
     NP_CHECK(fp_encrypted)
 
-    aes_file_encrypt(fp_plain, fp_encrypted, CTR, ctx);
+    AES_file_encrypt(fp_plain, fp_encrypted, CBC, ctx);
 
     fclose(fp_plain);
     fclose(fp_encrypted);
@@ -42,7 +41,7 @@ main() // todo: Extremely provisional tests. Implement better tests in near futu
     NP_CHECK(fp_encrypted)
     NP_CHECK(fp_decrypted)
 
-    aes_file_decrypt(fp_encrypted, fp_decrypted, ctx);
+    AES_file_decrypt(fp_encrypted, fp_decrypted, ctx);
 
     fclose(fp_encrypted);
     fclose(fp_decrypted);

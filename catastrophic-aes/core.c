@@ -150,7 +150,7 @@ rotw(uint8_t *w)
 
 
 /*
- * The function subw substitutes sub-bytes of a word with values of the sbox
+ * The function subw substitutes sub-bytes of a word with values of the sbox.
  */
 
 static void
@@ -162,8 +162,8 @@ subw(uint8_t *w)
 
 
 /*
- * The function rcon computes the round constant c which is {02} exponentiated to
- * exponent i in Rijndael's Galois field.
+ * The function rcon computes the round constant c which is {02} exponentiated
+ * to exponent i in Rijndael's Galois field.
  */
 
 static uint8_t
@@ -181,9 +181,9 @@ rcon(uint8_t i)
 
 
 /*
- * The function keysched_core performs the functions rotw and subw on a input word,
- * as well as XORS the first sub-byte of the word with a round constant computed
- * with rcon from i
+ * The function keysched_core performs the functions rotw and subw on a input
+ * word, as well as XORS the first sub-byte of the word with a round constant
+ * computed with rcon from i
  */
 
 static void
@@ -371,13 +371,13 @@ inv_mix_columns(uint8_t *state)
         a[3] = state[i * 4 + 3];
 
         state[i * 4 + 0] = gmul(a[0], 0x0e) ^ gmul(a[1], 0x0b) ^ \
-                          gmul(a[2], 0x0d) ^ gmul(a[3], 0x09);
+                           gmul(a[2], 0x0d) ^ gmul(a[3], 0x09);
         state[i * 4 + 1] = gmul(a[0], 0x09) ^ gmul(a[1], 0x0e) ^ \
-                          gmul(a[2], 0x0b) ^ gmul(a[3], 0x0d);
+                           gmul(a[2], 0x0b) ^ gmul(a[3], 0x0d);
         state[i * 4 + 2] = gmul(a[0], 0x0d) ^ gmul(a[1], 0x09) ^ \
-                          gmul(a[2], 0x0e) ^ gmul(a[3], 0x0b);
+                           gmul(a[2], 0x0e) ^ gmul(a[3], 0x0b);
         state[i * 4 + 3] = gmul(a[0], 0x0b) ^ gmul(a[1], 0x0d) ^ \
-                          gmul(a[2], 0x09) ^ gmul(a[3], 0x0e);
+                           gmul(a[2], 0x09) ^ gmul(a[3], 0x0e);
     }
 }
 

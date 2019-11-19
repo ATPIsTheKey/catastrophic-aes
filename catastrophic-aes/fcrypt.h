@@ -10,24 +10,20 @@
 
 #include "core.h"
 
-// todo: better hashing of opmodes
-/* Integer codes derived by summing ascii values of chars of cipher mode
- * name together. Luckily, no collisions. */
-#define ECB  202
-#define CBC  200
-#define CTR  233
-#define PCBC 280
-#define CFB  203
-#define OFB  215
+#define ECB  0xecb0
+#define CBC  0xcbc0
+#define CTR  0xc750
+#define CFB  0xcfb0
+#define OFB  0x0fb0
 
 
 typedef struct __attribute__((__packed__)) __aes_fheader {
-    uint8_t cipher_opmode[5];
+    uint16_t opmode_magic;
     uint8_t init_vector[16];
 } aes_fheader_s;
 
 
-int aes_file_encrypt(FILE *fp_in, FILE *fp_out, int opmode_hash, aes_ctx_s *ctx);
-int aes_file_decrypt(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx);
+int AES_file_encrypt(FILE *fp_in, FILE *fp_out, int opmode_hash, aes_ctx_s *ctx);
+int AES_file_decrypt(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx);
 
 #endif //CATASTROPHIC_AES_FCRYPT_H

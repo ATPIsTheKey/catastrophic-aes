@@ -1,5 +1,4 @@
 add error signaling
-add remaining mode hashes and check for collisions
 compute sbox tables at runtime
 implement key derivation and password storing
 implement file encryption as command line program (with inferred file pathes, etc... )
