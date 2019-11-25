@@ -25,7 +25,7 @@ typedef struct __aes_ctx {
 } aes_ctx_s;
 
 /* initialize data structures */
-aes_ctx_s *AES_ctx_init(uint8_t *key, uint16_t key_bitlen);
+aes_ctx_s *AES_ctx_init(uint8_t *key, uint32_t key_bitlen);
 void AES_ctx_destroy(aes_ctx_s *ctx);
 
 /* AES core operations */

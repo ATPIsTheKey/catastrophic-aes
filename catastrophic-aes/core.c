@@ -486,7 +486,7 @@ AES_invcipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
  */
 
 aes_ctx_s*
-AES_ctx_init(uint8_t *key, uint16_t key_bitlen)
+AES_ctx_init(uint8_t *key, uint32_t key_bitlen)
 {
     aes_ctx_s *new_ctx = malloc(sizeof(aes_ctx_s)); NP_CHECK(new_ctx)
     aes_key_s *new_key = malloc(sizeof(aes_key_s)); NP_CHECK(new_key)
