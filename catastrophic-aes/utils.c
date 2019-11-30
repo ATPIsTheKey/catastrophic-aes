@@ -65,7 +65,7 @@ pw_input_destroy(pw_input_s *input)
 
 
 pwderiv_key_s*
-pwderiv_input(int kblen, char *prompt) // todo: more testing required
+pwderiv_input(int kblen, char *prompt) // todo: remove completely as salt public
 {
     pwderiv_key_s *derivkey = malloc(sizeof(pwderiv_key_s)); NP_CHECK(derivkey)
     derivkey->len = (uint8_t) kblen;

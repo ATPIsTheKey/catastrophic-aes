@@ -10,7 +10,11 @@
 #include "core.h"
 #include "fcrypt.h"
 
-#define NBYTES_STATE 16
+#define NBYTES_STATE   16
+#define NBYTES_SALTVEC 32
+#define NBYTES_INITVEC 16
+#define NBYTES_NONCE   8
+#define NBYTES_WORD    4
 
 
 /*
@@ -25,6 +29,70 @@ xor_buff(uint8_t *a, const uint8_t *b, size_t b_len)
 }
 
 
+static int
+AES_fheader_prepare(
+        aes_fheader_s *fheader, uint16_t opmode_magic, aes_ctx_s *ctx)
+{
+    fheader->opmode_magic = opmode_magic;
+    fheader->salt_len     = ctx->key->Nb * NBYTES_WORD;
+
+    switch (opmode_magic) {
+        case ECB:
+            // In ECB mode, no initialization vector is used. Thus, fill it
+            // with null bytes.
+            memset(fheader->init_vector, '\0', NBYTES_INITVEC);
+            break;
+
+        case CBC:
+            // Generate random 16 bytes initialization vector.
+            if (RAND_bytes(fheader->init_vector, NBYTES_INITVEC) != 1)
+                return -1;
+
+            // Number of salt bytes depends on number of words per key.
+            fheader->salt_len = ctx->key->Nb * NBYTES_WORD;
+
+            // Fill salt vector with null bytes, as it might not be fully
+            // filled depending on key length.
+            memset(fheader->salt_vector, '\0', NBYTES_SALTVEC);
+
+            // Generate random Nb * 4 salt bytes
+            if (RAND_bytes(fheader->salt_vector, fheader->salt_len) != 1)
+                return -1;
+            break;
+
+        case CTR:
+            // Fill 16 bytes initialization vector with null bytes as nonce
+            // value is only 8 bytes.
+            memset(fheader->init_vector, '\0', NBYTES_INITVEC);
+
+            // In CTR mode, initialization vector is used to hold 8 byte nonce
+            // value.
+            if (RAND_bytes(fheader->init_vector, NBYTES_NONCE) != 1)
+                return -1;
+
+            // Fill salt vector with null bytes, as it might not be fully
+            // filled depending on key length.
+            memset(fheader->salt_vector, '\0', NBYTES_SALTVEC);
+
+            // Generate random Nb * 4 salt bytes.
+            if (RAND_bytes(fheader->salt_vector, fheader->salt_len) != 1)
+                return -1;
+            break;
+
+        case CFB:
+            break;
+
+        case OFB:
+            break;
+
+        default:
+            return -1;
+    }
+
+    return 0;
+}
+
+
 /*
  * The function AES_ECB_encrypt_file makes an encrypted copy of the file in
  * Electronic Codebook (ECB) mode.
@@ -36,13 +104,13 @@ xor_buff(uint8_t *a, const uint8_t *b, size_t b_len)
  */
 
 static int
-AES_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
+AES_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx)
 {
     uint8_t plain_b[16], enc_b[16];
     size_t b_read = 0;
 
-    aes_fheader_s fheader = { .opmode_magic = ECB };
-    memset(fheader.init_vector, '\0', sizeof(fheader.init_vector));
+    aes_fheader_s fheader;
+    AES_fheader_prepare(&fheader, ECB, ctx);
 
     fwrite(&fheader, sizeof(aes_fheader_s), sizeof(uint8_t), fp_out);
     while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16) {
@@ -65,7 +133,7 @@ AES_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 
 
 /*
- * The function AES_ECB_decrypt_file makes an decrypted copy of the ECB
+ * The function AES_ECB_decrypt_file makes a decrypted copy of the ECB
  * encrypted file. The file is divided into 16 byte blocks, and each block is
  * decrypted separately.
  */
@@ -75,7 +143,8 @@ AES_ECB_decrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 {
     uint8_t enc_b[16], plain_b[16];
 
-    while (fread(enc_b, 1, sizeof(enc_b), fp_in)) {
+    while (fread(enc_b, 1, sizeof(enc_b), fp_in))
+    {
         AES_invcipher_block(enc_b, plain_b, ctx);
         fwrite(plain_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
     }
@@ -97,20 +166,17 @@ AES_ECB_decrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
  */
 
 static int
-AES_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
+AES_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx)
 {
     uint8_t plain_b[16], enc_b[16];
     size_t b_read = 0;
 
-    aes_fheader_s fheader = { .opmode_magic = CBC };
-    // Generate random 16 bytes initialization vector.
-    if (RAND_bytes(fheader.init_vector, 16) != 1) return 0;
-    // For convenience, copy initialization vector into encrypted bytes
-    // buffer for first plaintext XORing.
-    memcpy(enc_b, fheader.init_vector, 16 * sizeof(uint8_t));
+    aes_fheader_s fheader;
+    AES_fheader_prepare(&fheader, ECB, ctx);
 
     fwrite(&fheader, sizeof(aes_fheader_s), sizeof(uint8_t), fp_out);
-    while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16) {
+    while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16)
+    {
         // The plaintext buffer is XORed with the previous encrypted bytes
         // buffer.
         xor_buff(plain_b, enc_b, NBYTES_STATE);
@@ -175,20 +241,23 @@ aes_CBC_decrypt_file(
  */
 
 static int
-AES_CTR_encrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
+AES_CTR_encrypt(FILE *fp_in, FILE *fp_out, aes_ctx_s *ctx)
 {
     uint8_t plain_b[16], enc_b[16];
     // nonce_ctr buffer holds nonce bytes and counter
-    uint64_t nonce_ctr[2] = { 0x00, 0x00 };
+    uint64_t nonce_ctr[2];
     size_t b_read = 0;
 
-    aes_fheader_s fheader = { .opmode_magic = CTR };
-    if (RAND_bytes( (uint8_t*) &nonce_ctr[0], 8) != 1) return 0;
-    // In CTR mode init vector is used to store 8 byte nonce value
-    memcpy(fheader.init_vector, (uint8_t*) nonce_ctr, sizeof(nonce_ctr[0]));
+    aes_fheader_s fheader;
+    AES_fheader_prepare(&fheader, ECB, ctx);
 
     fwrite(&fheader, sizeof(aes_fheader_s), sizeof(uint8_t), fp_out);
-    while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16) {
+
+    // For convenience during first plaintext ciphering, copy initialization
+    // vector into nonce_ctr buffer
+    memcpy(nonce_ctr, fheader.init_vector, NBYTES_INITVEC);
+    while ((b_read = fread(plain_b, 1, sizeof(plain_b), fp_in)) == 16)
+    {
         AES_cipher_block((uint8_t *) nonce_ctr, enc_b, ctx);
         xor_buff(enc_b, plain_b, NBYTES_STATE);
         fwrite(enc_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
@@ -200,6 +269,7 @@ AES_CTR_encrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
     if (b_read) {
         for (; b_read < 16; b_read++)
             plain_b[b_read] = '\0';
+
         // repeat encryption procedure for last plaintext block
         AES_cipher_block((uint8_t *) nonce_ctr, enc_b, ctx);
         xor_buff(enc_b, plain_b, NBYTES_STATE);
@@ -229,7 +299,8 @@ AES_CTR_decrypt_file(
     // copy 8 bytes nonce value of init vector into first 8 bytes of nonce_ctr buffer
     memcpy((uint8_t*) nonce_ctr, init_vector, 2 * sizeof(uint64_t));
 
-    while (fread(enc_b, 1, sizeof(enc_b), fp_in)) {
+    while (fread(enc_b, 1, sizeof(enc_b), fp_in))
+    {
         AES_cipher_block((uint8_t *) nonce_ctr, plain_b, ctx);
         xor_buff(plain_b, enc_b, NBYTES_STATE);
         fwrite(plain_b, NBYTES_STATE * sizeof(uint8_t), 1, fp_out);
@@ -241,27 +312,33 @@ AES_CTR_decrypt_file(
 
 
 int
-AES_file_encrypt(
+AES_encrypt_file(
         FILE *fp_in, FILE *fp_out, uint16_t opmode_magic, const aes_ctx_s *ctx)
 {
     switch (opmode_magic) {
         case ECB:
             AES_ECB_encrypt_file(fp_in, fp_out, ctx);
             break;
+
         case CBC:
             AES_CBC_encrypt_file(fp_in, fp_out, ctx);
             break;
+
         case CFB:
             break;
+
         case OFB:
             break;
+
         case CTR:
             AES_CTR_encrypt(fp_in, fp_out, ctx);
             break;
+
         default:
-            return 0;
+            return -1;
     }
-    return 1;
+
+    return 0;
 }
 
 
@@ -270,6 +347,7 @@ AES_file_decrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
 {
     uint16_t opmode_magic;
     fread(&opmode_magic, sizeof(opmode_magic), 1, fp_in);
+
     uint8_t init_vector[16];
     fread(init_vector, sizeof(init_vector), 1, fp_in);
 
@@ -277,18 +355,24 @@ AES_file_decrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx)
         case ECB:
             AES_ECB_decrypt_file(fp_in, fp_out, ctx);
             break;
+
         case CBC:
             aes_CBC_decrypt_file(fp_in, fp_out, ctx, init_vector);
             break;
+
         case CFB:
             break;
+
         case OFB:
             break;
+
         case CTR:
             AES_CTR_decrypt_file(fp_in, fp_out, ctx, init_vector);
             break;
-        default:
-            return 0;
+
+         default:
+            return -1;
     }
-    return 1;
+
+    return 0;
 }

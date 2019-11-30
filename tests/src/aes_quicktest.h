@@ -24,7 +24,7 @@ aes_main_test(uint8_t *key_b)
     NP_CHECK(fp_plain)
     NP_CHECK(fp_encrypted)
 
-    AES_file_encrypt(fp_plain, fp_encrypted, CBC, ctx);
+    AES_encrypt_file(fp_plain, fp_encrypted, CBC, ctx);
 
     fclose(fp_plain);
     fclose(fp_encrypted);

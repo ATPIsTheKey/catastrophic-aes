@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <caca.h>
 
 #include "core.h"
 
@@ -19,11 +20,15 @@
 
 typedef struct __attribute__((__packed__)) __aes_fheader {
     uint16_t opmode_magic;
-    uint8_t init_vector[16];
+    uint8_t  init_vector[16];
+    uint16_t salt_len;
+    uint8_t  salt_vector[32];
 } aes_fheader_s;
 
+int AES_prepare_fheader(aes_fheader_s *fheader, uint16_t opmode_magic, aes_ctx_s *ctx);
+int AES_fread_fheader(aes_fheader_s *fheader, FILE *fp);
 
-int AES_file_encrypt(FILE *fp_in, FILE *fp_out, uint16_t opmode_magic, const aes_ctx_s *ctx);
+int AES_encrypt_file(FILE *fp_in, FILE *fp_out, uint16_t opmode_magic, const aes_ctx_s *ctx);
 int AES_file_decrypt(FILE *fp_in, FILE *fp_out, const aes_ctx_s *ctx);
 
 #endif //CATASTROPHIC_AES_FCRYPT_H

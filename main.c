@@ -20,14 +20,14 @@ struct arg_rex *cmd1;
 struct arg_str *opmode;
 struct arg_lit *verb1, *help1, *vers1;
 struct arg_int *klen;
-struct arg_file *file1, *o1, *fkey1;
+struct arg_file *file1, *o1;
 struct arg_end *end1;
 int nerrors1;
 
 /* SYNTAX 2: decrypt */
 struct arg_rex *cmd2;
 struct arg_lit *verb2, *help2, *vers2;
-struct arg_file *file2, *o2, *fkey2;
+struct arg_file *file2, *o2;
 struct arg_end *end2;
 int nerrors2;
 
@@ -56,7 +56,6 @@ mainprocedure_encryption(
         int verb_cnt, int help_cnt, int vers_cnt,
         int klen_cnt, const int klen_val, const char *f_in,
         int f_out_cnt, const char *f_out,
-        int f_key_cnt, const char *f_key,
         char *progname, void *argtable
         )
 {
@@ -106,11 +105,11 @@ mainprocedure_encryption(
 
     FILE *fp_in  = fopen(f_in, "rb");
     FILE *fp_out;
-    FILE *fp_key;
 
     if (f_out_cnt)
         { fp_out = fopen(f_out, "wb+"); }
-    else {
+    else
+        {
         char fspec_out[strlen(f_in) + strlen(".crypt")];
         if (strlen(f_in) + strlen(".crypt") > PATH_MAX) {
             printf("Path length exceeding %d chars. Encryption terminated.",
@@ -121,26 +120,15 @@ mainprocedure_encryption(
         fp_out = fopen(fspec_out, "wb+");
     }
 
-    if (f_key_cnt)
-        { fp_key = fopen(f_key, "wb+"); }
-    else {
-        char fspec_key[strlen(f_in) + strlen(".key")];
-        if (strlen(f_in) + strlen(".key") > PATH_MAX) {
-            printf("Path length exceeding %d chars. Encryption terminated.",
-                   PATH_MAX);
-            return 0;
-        }
-        snprintf(fspec_key, sizeof(fspec_key), "%s%s", f_in, ".key");
-        fp_key = fopen(fspec_key, "wb+");
-    }
 
     /*** Begin encryption ************************************************/
 
-    pwderiv_key_s *keyderiv = pwderiv_input(
-            klen_val/ (int) sizeof(uint8_t), "Encryption password: ");
-    aes_ctx_s *enc_ctx = AES_ctx_init(keyderiv->key, keylen);
+    // todo: key derivation and salt storingt
+//    pwderiv_key_s *keyderiv = pwderiv_input(
+//            klen_val/ (int) sizeof(uint8_t), "Encryption password: ");
+//    aes_ctx_s *enc_ctx = AES_ctx_init(keyderiv->key, keylen);
 
-    AES_file_encrypt(fp_in, fp_out, cipher_opmode_magic, enc_ctx);
+    AES_encrypt_file(fp_in, fp_out, cipher_opmode_magic, enc_ctx);
 //    fwrite(fp_key, )
 
     AES_ctx_destroy(enc_ctx);
@@ -239,11 +227,6 @@ main(int argc, char **argv)
                 "output encrypted file (otional only; "
                 "placed in current dir by default)"
         ),
-        fkey1   = arg_filen(
-                "k", NULL, "<file>", 0, 1,
-                "output file for decryption key (optional only; "
-                "placed in current dir by default)"
-        ),
         end1   = arg_end(20)
     };
 
@@ -272,10 +255,6 @@ main(int argc, char **argv)
             o2      = arg_filen(
                     "o", NULL, "<file>", 0, 1,
                     "output decrypted file"
-            ),
-            fkey2    = arg_filen(
-                    "k", NULL, "<file>", 1, 1,
-                    "file containing key"
             ),
             end2   = arg_end(20)
     };
@@ -318,7 +297,6 @@ main(int argc, char **argv)
                 verb1->count, help1->count, vers1->count,
                 klen->count, klen->ival[0], file1->filename[0],
                 o1->count, o1->filename[0],
-                fkey1->count, fkey1->filename[0],
                 progname, argtable1
         );
         goto exit;
@@ -326,7 +304,7 @@ main(int argc, char **argv)
     else if (nerrors2 == 0) {
         exitcode = mainprocedure_decryption(
                 verb2->count, help2->count, vers2->count,
-                file2->filename[0], o2->filename[0], fkey2->filename[0],
+                file2->filename[0], o2->filename[0],
                 progname, argtable2
         );
         goto exit;

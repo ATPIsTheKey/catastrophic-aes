@@ -413,7 +413,6 @@ AES_cipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
     memcpy(state, in, NBYTES_STATE * sizeof(uint8_t));
 
     // Add first round key to the state before starting rounds.
-    add_round_key(state, ctx->expkey, r_i);
 
     // There are a total of Nr rounds per block ciphering.
     // The first Nr - 1 rounds are identical.
@@ -502,6 +501,7 @@ AES_ctx_init(uint8_t *key, uint32_t key_bitlen)
             NP_CHECK(new_ctx->expkey)
             expand_key(new_ctx->key, new_ctx->expkey);
             break;
+
         case KEY192:
             new_ctx->key->b  = key;
             new_ctx->key->Nk = 6;
@@ -511,6 +511,7 @@ AES_ctx_init(uint8_t *key, uint32_t key_bitlen)
             NP_CHECK(new_ctx->expkey)
             expand_key(new_ctx->key, new_ctx->expkey);
             break;
+
         case KEY256:
             new_ctx->key->b  = key;
             new_ctx->key->Nk = 8;
@@ -520,6 +521,7 @@ AES_ctx_init(uint8_t *key, uint32_t key_bitlen)
             NP_CHECK(new_ctx->expkey)
             expand_key(new_ctx->key, new_ctx->expkey);
             break;
+
         default:
 #ifdef DEBUG
             DBGPRINT(KRED"Unsupported key length: %d bits. Terminate "
@@ -527,6 +529,7 @@ AES_ctx_init(uint8_t *key, uint32_t key_bitlen)
 #endif
             return NULL;
     }
+
     return new_ctx;
 }
 
