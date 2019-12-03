@@ -28,7 +28,7 @@ add_executable(${PROJECT_NAME} main.c
         utils/stdprojutils.c utils/stdprojutils.h
         catastrophic-aes/core.c catastrophic-aes/core.h
         catastrophic-aes/utils.c catastrophic-aes/utils.h
-        catastrophic-aes/fcrypt.c catastrophic-aes/fcrypt.h
+        catastrophic-aes/fileop.c catastrophic-aes/fileop.h
         tests/src/aes_quicktest.h
         libs/argtable3.c libs/argtable3.h
         )

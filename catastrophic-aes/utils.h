@@ -8,15 +8,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct __attribute__((__packed__)) __pwderiv_key {
-    uint8_t len;
-    uint8_t *salt;
-    uint8_t *key;
-} pwderiv_key_s;
+typedef struct __pw_input {
+    char *buff;
+    size_t len;
+} pw_input_s;
 
-
-pwderiv_key_s* pwderiv_input(int kblen, char *prompt);
-void pwderiv_destroy(pwderiv_key_s *derivkey);
+pw_input_s *input_pw(FILE *fp, size_t buff_init_size);
+void pw_input_destroy(pw_input_s *input);
 
 /* convert hex string to hex buffer */
 int hexstr_to_bin(char *hexstr, uint8_t *out);

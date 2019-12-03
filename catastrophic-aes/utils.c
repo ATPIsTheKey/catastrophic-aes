@@ -13,13 +13,7 @@
 #include "../utils/stdprojutils.h"
 
 
-typedef struct __pw_input {
-    char *buff;
-    size_t len;
-} pw_input_s;
-
-
-static pw_input_s*
+pw_input_s*
 input_pw(FILE *fp, size_t buff_init_size)
 {
     size_t buffsize = buff_init_size;
@@ -56,41 +50,11 @@ input_pw(FILE *fp, size_t buff_init_size)
 }
 
 
-static void
+void
 pw_input_destroy(pw_input_s *input)
 {
     free(input->buff);
     free(input);
-}
-
-
-pwderiv_key_s*
-pwderiv_input(int kblen, char *prompt) // todo: remove completely as salt public
-{
-    pwderiv_key_s *derivkey = malloc(sizeof(pwderiv_key_s)); NP_CHECK(derivkey)
-    derivkey->len = (uint8_t) kblen;
-    derivkey->salt = calloc(kblen, sizeof(uint8_t)); NP_CHECK(derivkey->salt)
-    derivkey->key  = calloc(kblen, sizeof(uint8_t)); NP_CHECK(derivkey->key)
-
-    printf("%s", prompt);
-    pw_input_s *input = input_pw(stdin, 24); NP_CHECK(input)
-
-    RAND_bytes(derivkey->salt, kblen * (int) sizeof(uint8_t));
-    PKCS5_PBKDF2_HMAC_SHA1(
-            input->buff, input->len,
-            derivkey->salt, kblen, 1000,
-            derivkey->len, derivkey->key
-    );
-
-    pw_input_destroy(input);
-    return derivkey;
-}
-
-
-void
-pwderiv_destroy(pwderiv_key_s *derivkey)
-{
-    free(derivkey);
 }
 
 

@@ -401,12 +401,12 @@ add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
 
 
 /*
- * The function AES_cipher_block AES ciphers an plain text 16 byte block
+ * The function AES_CORE_cipher_block AES ciphers an plain text 16 byte block
  * from an AES key
  */
 
 void
-AES_cipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
+AES_CORE_cipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_s *ctx)
 {
     uint8_t r_i = 0; // round index
     uint8_t state[NBYTES_STATE];
@@ -433,12 +433,12 @@ AES_cipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
 
 /*
- * The function AES_invcipher_block deciphers an AES encrypted 16 byte block
+ * The function AES_CORE_invcipher_block deciphers an AES encrypted 16 byte block
  * from a correct AES key.
  */
 
 void
-AES_invcipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
+AES_CORE_invcipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_s *ctx)
 {
     // Start round index from Nr so that it can be decremented in rounds loop.
     uint8_t r_i = ctx->key->Nr;
@@ -467,9 +467,9 @@ AES_invcipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
 
 
 /*
- * The function AES_ctx_init initializes a new context for AES block ciphering.
+ * The function AES_CORE_ctx_init initializes a new context for AES block ciphering.
  * AES key is initialized in aes_key_s data structure and its key is expanded into
- * large enough buffer. AES key and expanded key buffer are stored in aes_ctx_s
+ * large enough buffer. AES key and expanded key buffer are stored in aes_core_ctx_s
  * data structure.
  *
  * aes_key_s data structure is initialized according to key length:
@@ -484,11 +484,14 @@ AES_invcipher_block(const uint8_t *in, uint8_t *out, const aes_ctx_s *ctx)
  *    AES-256 | 8          | 4         | 14
  */
 
-aes_ctx_s*
-AES_ctx_init(uint8_t *key, uint32_t key_bitlen)
+aes_core_ctx_s*
+AES_CORE_ctx_init(uint8_t *key, uint32_t key_bitlen)
 {
-    aes_ctx_s *new_ctx = malloc(sizeof(aes_ctx_s)); NP_CHECK(new_ctx)
-    aes_key_s *new_key = malloc(sizeof(aes_key_s)); NP_CHECK(new_key)
+    aes_core_ctx_s *new_ctx = malloc(sizeof(aes_core_ctx_s));
+    NP_CHECK(new_ctx)
+
+    aes_key_s *new_key = malloc(sizeof(aes_key_s));
+    NP_CHECK(new_key)
 
     new_ctx->key = new_key;
     switch (key_bitlen) {
@@ -535,13 +538,14 @@ AES_ctx_init(uint8_t *key, uint32_t key_bitlen)
 
 
 /*
- * The function AES_ctx_destroy frees any dynamic memory allocated while initializing
- * new AES context with AES_ctx_init
+ * The function AES_CORE_ctx_destroy frees any dynamic memory allocated while initializing
+ * new AES context with AES_CORE_ctx_init
  */
 
 void
-AES_ctx_destroy(aes_ctx_s *ctx)
+AES_CORE_ctx_destroy(aes_core_ctx_s *ctx)
 {
+    free(ctx->key->b);
     free(ctx->key);
     free(ctx->expkey);
     free(ctx);
