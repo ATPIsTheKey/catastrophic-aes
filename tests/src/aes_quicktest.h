@@ -18,7 +18,7 @@
 //int
 //aes_main_test(uint8_t *key_b)
 //{
-//    aes_core_ctx_s *ctx = AES_CORE_ctx_init(key_b, KEY128);
+//    aes_core_ctx_st *ctx = AES_CORE_ctx_init(key_b, KEY128);
 //    FILE *fp_plain = fopen(PATH"/test_file.jpg", "rb");
 //    FILE *fp_encrypted = fopen(PATH"/test_file.crypt", "wb");
 //    NP_CHECK(fp_plain)

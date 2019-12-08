@@ -207,7 +207,7 @@ keysched_core(uint8_t *w, uint8_t i)
  */
 
 void
-expand_key(aes_key_s *key, uint8_t *w)
+expand_key(aes_key_st *key, uint8_t *w)
 {
     uint8_t tmp[NBYTES_STATECOLUMN]; // used for column and row operations
     uint32_t i = 0;
@@ -406,13 +406,14 @@ add_round_key(uint8_t *state, const uint8_t *w, uint8_t r_i)
  */
 
 void
-AES_CORE_cipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_s *ctx)
+AES_CORE_cipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_st *ctx)
 {
     uint8_t r_i = 0; // round index
     uint8_t state[NBYTES_STATE];
     memcpy(state, in, NBYTES_STATE * sizeof(uint8_t));
 
     // Add first round key to the state before starting rounds.
+    add_round_key(state, ctx->expkey, r_i);
 
     // There are a total of Nr rounds per block ciphering.
     // The first Nr - 1 rounds are identical.
@@ -438,7 +439,7 @@ AES_CORE_cipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_s *ctx
  */
 
 void
-AES_CORE_invcipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_s *ctx)
+AES_CORE_invcipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_st *ctx)
 {
     // Start round index from Nr so that it can be decremented in rounds loop.
     uint8_t r_i = ctx->key->Nr;
@@ -468,11 +469,11 @@ AES_CORE_invcipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_s *
 
 /*
  * The function AES_CORE_ctx_init initializes a new context for AES block ciphering.
- * AES key is initialized in aes_key_s data structure and its key is expanded into
- * large enough buffer. AES key and expanded key buffer are stored in aes_core_ctx_s
+ * AES key is initialized in aes_key_st data structure and its key is expanded into
+ * large enough buffer. AES key and expanded key buffer are stored in aes_core_ctx_st
  * data structure.
  *
- * aes_key_s data structure is initialized according to key length:
+ * aes_key_st data structure is initialized according to key length:
  *
  *            | Key Length | Block Size | Number of Rounds
  *            | (Nk words) | (Nb words) | (Nr)
@@ -484,13 +485,13 @@ AES_CORE_invcipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_s *
  *    AES-256 | 8          | 4         | 14
  */
 
-aes_core_ctx_s*
+aes_core_ctx_st*
 AES_CORE_ctx_init(uint8_t *key, uint32_t key_bitlen)
 {
-    aes_core_ctx_s *new_ctx = malloc(sizeof(aes_core_ctx_s));
+    aes_core_ctx_st *new_ctx = malloc(sizeof(aes_core_ctx_st));
     NP_CHECK(new_ctx)
 
-    aes_key_s *new_key = malloc(sizeof(aes_key_s));
+    aes_key_st *new_key = malloc(sizeof(aes_key_st));
     NP_CHECK(new_key)
 
     new_ctx->key = new_key;
@@ -543,9 +544,8 @@ AES_CORE_ctx_init(uint8_t *key, uint32_t key_bitlen)
  */
 
 void
-AES_CORE_ctx_destroy(aes_core_ctx_s *ctx)
+AES_CORE_ctx_destroy(aes_core_ctx_st *ctx)
 {
-    free(ctx->key->b);
     free(ctx->key);
     free(ctx->expkey);
     free(ctx);

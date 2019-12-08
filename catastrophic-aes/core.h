@@ -17,19 +17,19 @@ typedef struct __aes_key {
     uint8_t Nk;
     uint8_t Nb;
     uint8_t Nr;
-} aes_key_s;
+} aes_key_st;
 
 typedef struct __aes_ctx {
-    aes_key_s *key;
+    aes_key_st *key;
     uint8_t   *expkey;
-} aes_core_ctx_s;
+} aes_core_ctx_st;
 
 /* initialize data structures */
-aes_core_ctx_s *AES_CORE_ctx_init(uint8_t *key, uint32_t key_bitlen);
-void AES_CORE_ctx_destroy(aes_core_ctx_s *ctx);
+aes_core_ctx_st *AES_CORE_ctx_init(uint8_t *key, uint32_t key_bitlen);
+void AES_CORE_ctx_destroy(aes_core_ctx_st *ctx);
 
 /* AES core operations */
-void expand_key   (aes_key_s *key, uint8_t *w);
+void expand_key   (aes_key_st *key, uint8_t *w);
 void sub_bytes    (uint8_t *state);
 void shift_rows   (uint8_t *state);
 void mix_columns  (uint8_t *state);
@@ -41,8 +41,8 @@ void inv_mix_columns(uint8_t *state);
 
 /* AES block cipher operations */
 void AES_CORE_cipher_block   (const uint8_t *in, uint8_t *out,
-                              const aes_core_ctx_s *ctx);
+                              const aes_core_ctx_st *ctx);
 void AES_CORE_invcipher_block(const uint8_t *in, uint8_t *out,
-                              const aes_core_ctx_s *ctx);
+                              const aes_core_ctx_st *ctx);
 
 #endif //CATASTROPHIC_AES_CORE_H

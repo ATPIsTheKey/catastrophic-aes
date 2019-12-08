@@ -13,35 +13,35 @@
 #include "../utils/stdprojutils.h"
 
 
-pw_input_s*
-input_pw(FILE *fp, size_t buff_init_size)
+input_buff_st*
+input_buffered(FILE *fp, size_t buff_init_size)
 {
     size_t buffsize = buff_init_size;
 
-    pw_input_s *input = malloc(sizeof(pw_input_s));
+    input_buff_st *input = malloc(sizeof(input_buff_st));
     NP_CHECK(input)
-    input->buff = calloc(buffsize, sizeof(char));
-    NP_CHECK(input->buff)
+    input->b = calloc(buffsize, sizeof(char));
+    NP_CHECK(input->b)
 
     int c;
     size_t len = 0;
     while( EOF != (c=fgetc(fp)) && c != '\n' )
     {
-        input->buff[len++] = (char) c;
+        input->b[len++] = (char) c;
         if(len == buff_init_size) {
-            input->buff = realloc(
-                    input->buff, sizeof(char) * (buffsize += 16)
+            input->b = realloc(
+                    input->b, sizeof(char) * (buffsize += 16)
             );
-            NP_CHECK(input->buff)
+            NP_CHECK(input->b)
         }
     }
 
-    input->buff[++len] ='\0';
-    input->buff        = realloc(input->buff, len);
+    input->b[++len] ='\0';
+    input->b        = realloc(input->b, len);
     input->len         = len;
 
     if (input->len == 1) {
-        free(input->buff);
+        free(input->b);
         free(input);
         return NULL;
     }
@@ -51,9 +51,9 @@ input_pw(FILE *fp, size_t buff_init_size)
 
 
 void
-pw_input_destroy(pw_input_s *input)
+pw_input_destroy(input_buff_st *input)
 {
-    free(input->buff);
+    free(input->b);
     free(input);
 }
 

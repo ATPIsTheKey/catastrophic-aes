@@ -8,23 +8,40 @@
 
 #include "libs/argtable3.h"
 #include "tests/src/aes_quicktest.h"
+#include "catastrophic-aes/core.h"
 #include "catastrophic-aes/fileop.h"
 
 #define PROGNAME "catastrophic-aes"
 #define VERSION "1.0.0"
 
+#define PLAINTESTFILE "/home/roland/CLionProjects/catastrophic-aes/tests/files/test_file.jpg"
+#define CRYPTTESTFILE "/home/roland/CLionProjects/catastrophic-aes/tests/files/test_file.jpg.crypt"
+#define DECRYPTTESTFILE "/home/roland/CLionProjects/catastrophic-aes/tests/files/test_file_decrypt.jpg"
+
 int
 main(int argc, char **argv)
 {
-    pw_input_s pw;
-    pw.buff = "5463vvdvdf";
+    input_buff_st pw;
+    pw.b = "5463vvdvdf";
     pw.len = 11;
 
-    aes_fileop_enc_ctx_s *ctx = AES_FILEOP_enc_ctx_init(CBC, KEY128, &pw);
-    AES_FILEOP_enc_ctx_destroy(ctx);
+    aes_fcrypt_ctx_st *encryption_ctx = AES_FILEOP_filecrypt_ctx_init(
+        &pw, ECB, KEY128
+        );
 
-    for (int i = 0; i < 16; ++i)
-        printf("%x ", ctx->core_ctx->key->b[i]);
+    aes_fdecrypt_ctx_st decryption_ctx;
+    decryption_ctx.inpw = &pw;
 
+    FILE *fp_plain = fopen(PLAINTESTFILE, "rb");
+    FILE *fp_enc   = fopen(CRYPTTESTFILE, "wb");
+    FILE *fp_decr  = fopen(DECRYPTTESTFILE, "wb");
+
+    AES_ECB_encrypt_file(fp_plain, fp_enc, encryption_ctx);
+    fclose(fp_enc);
+
+    fp_enc   = fopen(CRYPTTESTFILE, "rb");
+    AES_ECB_decrypt_file(fp_enc, fp_decr, &decryption_ctx);
+
+    AES_FILEOP_filecrypt_ctx_destroy(encryption_ctx);
     return 0;
 }

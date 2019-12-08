@@ -23,36 +23,34 @@ typedef struct __attribute__((__packed__)) __aes_fheader {
     uint8_t  init_vector[16];
     uint16_t salt_len;
     uint8_t  salt_vector[32];
-} aes_fheader_s;
+} aes_fheader_st;
 
 
-typedef struct __aes_fileop_enc_ctx {
-    aes_core_ctx_s *core_ctx;
-    uint16_t opmode_magic;
-    uint8_t *pw_salt;
-} aes_fileop_enc_ctx_s;
-
-typedef struct __aes_fileop_decr_ctx {
-    aes_core_ctx_s *core_ctx;
-    pw_input_s *fcrypt_pw;
-} aes_fileop_decr_ctx_s;
+typedef struct __aes_filecrypt_ctx {
+    uint16_t       opmode_magic;
+    uint8_t       *bkey;
+    uint16_t       key_bitlen;
+    uint8_t       *salt;
+    uint16_t       salt_len;
+} aes_fcrypt_ctx_st;
 
 
-aes_fileop_enc_ctx_s* AES_FILEOP_enc_ctx_init(
-        uint16_t opmode_magic, int32_t key_bitlen,
-        pw_input_s *fcrypt_pw);
+typedef struct __aes_fdecrypt_ctx {
+    input_buff_st *inpw;
+} aes_fdecrypt_ctx_st;
 
-aes_fileop_enc_ctx_s* AES_FILEOP_decr_ctx_init(
-        uint16_t opmode_magic, int32_t key_bitlen,
-        pw_input_s *fcrypt_pw);
 
-void AES_FILEOP_enc_ctx_destroy(aes_fileop_enc_ctx_s *ctx);
-void AES_FILEOP_enc_decr_destroy(aes_fileop_enc_ctx_s *ctx);
+aes_fcrypt_ctx_st *AES_FILEOP_filecrypt_ctx_init(
+        input_buff_st *inpw, uint16_t opmode_magic, uint16_t key_bitlen);
+void AES_FILEOP_filecrypt_ctx_destroy(aes_fcrypt_ctx_st *ctx);
 
-int AES_FILEOP_prepare_fheader(aes_fheader_s *fheader, aes_fileop_enc_ctx_s *ctx);
-int AES_FILEOP_fread_fheader(aes_fheader_s *fheader, FILE *fp);
+int AES_FILEOP_prepare_fheader(aes_fheader_st *fheader, aes_fcrypt_ctx_st *ctx);
+int AES_FILEOP_fread_fheader(aes_fheader_st *fheader, FILE *fp);
 
-int AES_FILEOP_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_enc_ctx_s *ctx);
-int AES_FILEOP_decrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_decr_ctx_s *ctx);
+int AES_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fcrypt_ctx_st *ctx);
+int AES_ECB_decrypt_file(FILE *fp_in, FILE *fp_out, aes_fdecrypt_ctx_st *ctx);
+//
+//int AES_FILEOP_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_enc_ctx_s *ctx);
+//int AES_FILEOP_decrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_decr_ctx_s *ctx);
 
 #endif //CATASTROPHIC_AES_FILEOP_H
