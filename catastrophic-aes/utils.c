@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <openssl/evp.h>
-#include <openssl/rand.h>
-
 #include "utils.h"
 #include "../utils/stdprojutils.h"
 

@@ -25,22 +25,23 @@ main(int argc, char **argv)
     pw.b = "5463vvdvdf";
     pw.len = 11;
 
-    aes_fcrypt_ctx_st *encryption_ctx = AES_FILEOP_filecrypt_ctx_init(
-        &pw, ECB, KEY128
-        );
+    input_buff_st pw2;
+    pw2.b = "5463vvdvdf";
+    pw2.len = 11;
 
-    aes_fdecrypt_ctx_st decryption_ctx;
-    decryption_ctx.inpw = &pw;
+    aes_fileop_ctx_st *encryption_ctx = AES_FILEOP_filecrypt_ctx_init(
+        &pw, CBC, KEY128
+        );
 
     FILE *fp_plain = fopen(PLAINTESTFILE, "rb");
     FILE *fp_enc   = fopen(CRYPTTESTFILE, "wb");
     FILE *fp_decr  = fopen(DECRYPTTESTFILE, "wb");
 
-    AES_ECB_encrypt_file(fp_plain, fp_enc, encryption_ctx);
+    AES_CBC_encrypt_file(fp_plain, fp_enc, encryption_ctx);
     fclose(fp_enc);
 
     fp_enc   = fopen(CRYPTTESTFILE, "rb");
-    AES_ECB_decrypt_file(fp_enc, fp_decr, &decryption_ctx);
+    AES_CBC_decrypt_file(fp_enc, fp_decr, &pw2);
 
     AES_FILEOP_filecrypt_ctx_destroy(encryption_ctx);
     return 0;

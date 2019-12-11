@@ -207,7 +207,7 @@ keysched_core(uint8_t *w, uint8_t i)
  */
 
 void
-expand_key(aes_key_st *key, uint8_t *w)
+expand_key(aes_core_key_st *key, uint8_t *w)
 {
     uint8_t tmp[NBYTES_STATECOLUMN]; // used for column and row operations
     uint32_t i = 0;
@@ -469,11 +469,11 @@ AES_CORE_invcipher_block(const uint8_t *in, uint8_t *out, const aes_core_ctx_st 
 
 /*
  * The function AES_CORE_ctx_init initializes a new context for AES block ciphering.
- * AES key is initialized in aes_key_st data structure and its key is expanded into
+ * AES key is initialized in aes_core_key_st data structure and its key is expanded into
  * large enough buffer. AES key and expanded key buffer are stored in aes_core_ctx_st
  * data structure.
  *
- * aes_key_st data structure is initialized according to key length:
+ * aes_core_key_st data structure is initialized according to key length:
  *
  *            | Key Length | Block Size | Number of Rounds
  *            | (Nk words) | (Nb words) | (Nr)
@@ -491,7 +491,7 @@ AES_CORE_ctx_init(uint8_t *key, uint32_t key_bitlen)
     aes_core_ctx_st *new_ctx = malloc(sizeof(aes_core_ctx_st));
     NP_CHECK(new_ctx)
 
-    aes_key_st *new_key = malloc(sizeof(aes_key_st));
+    aes_core_key_st *new_key = malloc(sizeof(aes_core_key_st));
     NP_CHECK(new_key)
 
     new_ctx->key = new_key;
