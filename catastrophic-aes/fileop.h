@@ -20,17 +20,17 @@
 
 typedef struct __attribute__((__packed__)) __aes_fheader {
     uint16_t opmode_magic;
-    uint8_t  init_vector[16];
+    uint8_t  init_vec[16];
     uint16_t key_salt_len;
-    uint8_t  salt_vector[32];
+    uint8_t  salt_vec[32];
 } aes_fheader_st;
 
 
 typedef struct __aes_fileop_ctx {
     uint16_t       opmode_magic;
-    uint8_t       *bkey;
+    uint8_t       *key_vec;
     uint16_t       key_bitlen;
-    uint8_t       *salt;
+    uint8_t       *salt_vec;
     uint16_t       salt_len;
 } aes_fileop_ctx_st;
 
@@ -39,19 +39,7 @@ aes_fileop_ctx_st *AES_FILEOP_filecrypt_ctx_init(
         input_buff_st *inpw, uint16_t opmode_magic, uint16_t key_bitlen);
 void AES_FILEOP_filecrypt_ctx_destroy(aes_fileop_ctx_st *ctx);
 
-int AES_FILEOP_prepare_fheader(aes_fheader_st *fheader, aes_fileop_ctx_st *ctx);
-int AES_FILEOP_fread_fheader(aes_fheader_st *fheader, FILE *fp);
-
-int AES_ECB_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_ctx_st *ctx);
-int AES_ECB_decrypt_file(FILE *fp_in, FILE *fp_out, input_buff_st *inpw);
-
-int AES_CBC_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_ctx_st *ctx);
-int AES_CBC_decrypt_file(FILE *fp_in, FILE *fp_out, input_buff_st *inpw);
-
-int AES_CTR_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_ctx_st *ctx);
-int AES_CTR_decrypt_file(FILE *fp_in, FILE *fp_out, input_buff_st *inpw);
-
-//int AES_FILEOP_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_enc_ctx_s *ctx);
-//int AES_FILEOP_decrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_decr_ctx_s *ctx);
+int AES_FILEOP_encrypt_file(FILE *fp_in, FILE *fp_out, aes_fileop_ctx_st *ctx);
+int AES_FILEOP_decrypt_file(FILE *fp_in, FILE *fp_out, input_buff_st *inpw);
 
 #endif //CATASTROPHIC_AES_FILEOP_H

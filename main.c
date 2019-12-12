@@ -10,6 +10,7 @@
 #include "tests/src/aes_quicktest.h"
 #include "catastrophic-aes/core.h"
 #include "catastrophic-aes/fileop.h"
+#include "utils/stdprojutils.h"
 
 #define PROGNAME "catastrophic-aes"
 #define VERSION "1.0.0"
@@ -30,18 +31,18 @@ main(int argc, char **argv)
     pw2.len = 11;
 
     aes_fileop_ctx_st *encryption_ctx = AES_FILEOP_filecrypt_ctx_init(
-        &pw, CBC, KEY128
-        );
+        &pw, ECB, KEY128);
+    NP_CHECK(encryption_ctx)
 
     FILE *fp_plain = fopen(PLAINTESTFILE, "rb");
     FILE *fp_enc   = fopen(CRYPTTESTFILE, "wb");
     FILE *fp_decr  = fopen(DECRYPTTESTFILE, "wb");
 
-    AES_CBC_encrypt_file(fp_plain, fp_enc, encryption_ctx);
+    AES_FILEOP_encrypt_file(fp_plain, fp_enc, encryption_ctx);
     fclose(fp_enc);
 
-    fp_enc   = fopen(CRYPTTESTFILE, "rb");
-    AES_CBC_decrypt_file(fp_enc, fp_decr, &pw2);
+    fp_enc = fopen(CRYPTTESTFILE, "rb");
+    AES_FILEOP_decrypt_file(fp_enc, fp_decr, &pw2);
 
     AES_FILEOP_filecrypt_ctx_destroy(encryption_ctx);
     return 0;
